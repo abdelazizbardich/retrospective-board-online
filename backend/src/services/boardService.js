@@ -2,10 +2,12 @@ const { v4: uuidv4 } = require('uuid');
 const Board = require('../models/Board');
 const Column = require('../models/Column');
 const Ticket = require('../models/Ticket');
+const { generateRoomCode, isValidRoomCode } = require('../utils/roomCode');
 
 class BoardService {
   constructor() {
     this.boards = new Map();
+    this.roomCodes = new Map(); // Map room codes to board IDs
     this.initializeDefaultBoard();
   }
 
@@ -37,14 +39,37 @@ class BoardService {
     return this.boards.get(boardId);
   }
 
-  createBoard(name) {
+  getBoardByRoomCode(roomCode) {
+    const boardId = this.roomCodes.get(roomCode.toUpperCase());
+    return boardId ? this.boards.get(boardId) : null;
+  }
+
+  createBoard(name, adminUserId = null) {
     const boardId = uuidv4();
-    const board = new Board(boardId, name);
+    let roomCode = generateRoomCode();
+    
+    // Ensure unique room code
+    while (this.roomCodes.has(roomCode)) {
+      roomCode = generateRoomCode();
+    }
+    
+    const board = new Board(boardId, name, roomCode);
+    
+    if (adminUserId) {
+      board.setAdmin(adminUserId);
+    }
+    
     this.boards.set(boardId, board);
+    this.roomCodes.set(roomCode, boardId);
+    
     return board;
   }
 
   deleteBoard(boardId) {
+    const board = this.boards.get(boardId);
+    if (board && board.roomCode) {
+      this.roomCodes.delete(board.roomCode);
+    }
     return this.boards.delete(boardId);
   }
 
@@ -214,6 +239,62 @@ class BoardService {
 
     const result = board.toggleUserNames(userId);
     if (result === true) {
+      return board;
+    }
+    return result;
+  }
+
+  // Room and participant operations
+  addParticipant(boardId, userId, username) {
+    const board = this.boards.get(boardId);
+    if (!board) return null;
+
+    board.addParticipant(userId, username);
+    return board;
+  }
+
+  // Timer operations
+  startTimer(boardId, type, durationMinutes, userId) {
+    const board = this.boards.get(boardId);
+    if (!board) return null;
+
+    const result = board.startTimer(type, durationMinutes, userId);
+    if (result === true) {
+      return board;
+    }
+    return result;
+  }
+
+  stopTimer(boardId, userId) {
+    const board = this.boards.get(boardId);
+    if (!board) return null;
+
+    const result = board.stopTimer(userId);
+    if (result === true) {
+      return board;
+    }
+    return result;
+  }
+
+  // Session phase operations
+  setSessionPhase(boardId, phase, userId) {
+    const board = this.boards.get(boardId);
+    if (!board) return null;
+
+    const result = board.setSessionPhase(phase, userId);
+    if (result === true) {
+      return board;
+    }
+    return result;
+  }
+
+  endSession(boardId, userId) {
+    const board = this.boards.get(boardId);
+    if (!board) return null;
+
+    const result = board.endSession(userId);
+    if (result === true) {
+      // Here we could save to database in the future
       return board;
     }
     return result;

@@ -142,6 +142,73 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Room and participant management
+  socket.on('join-room', ({ boardId, userId, username }) => {
+    const board = boardService.addParticipant(boardId, userId, username);
+    if (board) {
+      socket.join(boardId);
+      io.to(boardId).emit('participant-joined', { 
+        boardId, 
+        participant: { userId, username },
+        participants: board.participants 
+      });
+    }
+  });
+
+  // Timer management
+  socket.on('start-timer', ({ boardId, type, durationMinutes, userId }) => {
+    const result = boardService.startTimer(boardId, type, durationMinutes, userId);
+    if (result && !result.error) {
+      io.to(boardId).emit('timer-started', { 
+        boardId, 
+        timer: result.timer,
+        sessionPhase: result.sessionPhase
+      });
+    } else {
+      socket.emit('retro-error', { error: result?.error || 'Failed to start timer' });
+    }
+  });
+
+  socket.on('stop-timer', ({ boardId, userId }) => {
+    const result = boardService.stopTimer(boardId, userId);
+    if (result && !result.error) {
+      io.to(boardId).emit('timer-stopped', { boardId });
+    } else {
+      socket.emit('retro-error', { error: result?.error || 'Failed to stop timer' });
+    }
+  });
+
+  // Session phase management
+  socket.on('set-session-phase', ({ boardId, phase, userId }) => {
+    const result = boardService.setSessionPhase(boardId, phase, userId);
+    if (result && !result.error) {
+      io.to(boardId).emit('session-phase-changed', { 
+        boardId, 
+        sessionPhase: result.sessionPhase 
+      });
+    } else {
+      socket.emit('retro-error', { error: result?.error || 'Failed to change session phase' });
+    }
+  });
+
+  socket.on('end-session', ({ boardId, userId }) => {
+    const result = boardService.endSession(boardId, userId);
+    if (result && !result.error) {
+      io.to(boardId).emit('session-ended', { 
+        boardId,
+        sessionPhase: result.sessionPhase,
+        finalData: {
+          columns: result.columns,
+          participants: result.participants,
+          createdAt: result.createdAt,
+          endedAt: new Date()
+        }
+      });
+    } else {
+      socket.emit('retro-error', { error: result?.error || 'Failed to end session' });
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });

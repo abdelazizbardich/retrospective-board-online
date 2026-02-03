@@ -19,12 +19,21 @@ router.get('/:boardId', (req, res) => {
 
 // Create a new board
 router.post('/', (req, res) => {
-  const { name } = req.body;
+  const { name, adminUserId } = req.body;
   if (!name) {
     return res.status(400).json({ error: 'Board name is required' });
   }
-  const board = boardService.createBoard(name);
+  const board = boardService.createBoard(name, adminUserId);
   res.status(201).json(board);
+});
+
+// Get board by room code
+router.get('/room/:roomCode', (req, res) => {
+  const board = boardService.getBoardByRoomCode(req.params.roomCode);
+  if (!board) {
+    return res.status(404).json({ error: 'Room not found' });
+  }
+  res.json(board);
 });
 
 // Delete a board
