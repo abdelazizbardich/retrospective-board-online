@@ -20,7 +20,7 @@ A real-time collaborative retrospective board application built with Node.js and
 - In-memory storage (can be extended to use a database)
 
 ### Frontend
-- Angular 17
+- Angular 19
 - Angular CDK (for drag-and-drop)
 - Socket.IO Client
 - Standalone Components
