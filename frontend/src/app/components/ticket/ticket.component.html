@@ -1,0 +1,28 @@
+<div class="ticket" [class]="getStatusClass()">
+  <div class="ticket-header">
+    <select 
+      class="status-select" 
+      [value]="ticket.status" 
+      (change)="onStatusChange($any($event.target).value)">
+      <option value="created">Created</option>
+      <option value="taken">Taken</option>
+      <option value="done">Done</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <button class="delete-btn" (click)="onDelete()">×</button>
+  </div>
+  
+  <div class="ticket-content">
+    {{ ticket.content }}
+  </div>
+  
+  <div class="ticket-footer">
+    <button 
+      class="vote-btn" 
+      [class.voted]="hasVoted()" 
+      (click)="onVote()">
+      <span class="vote-icon">👍</span>
+      <span class="vote-count">{{ ticket.votes }}</span>
+    </button>
+  </div>
+</div>
