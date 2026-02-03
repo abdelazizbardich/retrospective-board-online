@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule } from '@angular/cdk/drag-drop';
-import { Router } from '@angular/router';
 import { Board, Column, Ticket } from '../../models/board.model';
 import { BoardService } from '../../services/board.service';
 import { SocketService } from '../../services/socket.service';
@@ -28,17 +27,11 @@ export class BoardComponent implements OnInit, OnDestroy {
   constructor(
     private boardService: BoardService,
     private socketService: SocketService,
-    private userService: UserService,
-    private router: Router
+    private userService: UserService
   ) {
     // Get user ID and username from service
     this.userId = this.userService.getUserId();
     this.username = this.userService.getUsernameValue();
-    
-    // If no username is set, redirect to lobby
-    if (!this.username) {
-      this.router.navigate(['/']);
-    }
   }
 
   ngOnInit(): void {

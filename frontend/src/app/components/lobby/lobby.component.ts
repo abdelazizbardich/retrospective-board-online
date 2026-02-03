@@ -34,7 +34,7 @@ export class LobbyComponent {
     }
 
     if (trimmedUsername.length > 20) {
-      this.errorMessage = 'Username must be less than 20 characters';
+      this.errorMessage = 'Username must be 20 characters or less';
       return;
     }
 
