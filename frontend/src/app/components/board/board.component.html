@@ -20,6 +20,12 @@
           (click)="onStopRetro()">
           Stop Retro
         </button>
+        <button 
+          class="retro-btn toggle-btn" 
+          (click)="onToggleUserNames()"
+          [title]="board?.showUserNames ? 'Click to hide usernames' : 'Click to show usernames'">
+          {{ getUserNamesButtonText() }}
+        </button>
       </div>
     </div>
   </header>
@@ -31,6 +37,7 @@
       [boardId]="board.id"
       [userId]="userId"
       [isAdmin]="isUserAdmin()"
+      [showUserNames]="board.showUserNames"
       (addTicket)="onAddTicket($event)"
       (voteTicket)="onVoteTicket($event)"
       (unvoteTicket)="onUnvoteTicket($event)"

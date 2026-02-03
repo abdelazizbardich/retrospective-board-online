@@ -26,5 +26,6 @@ export interface Board {
   columns: Column[];
   adminUserId: string | null;
   retroState: 'not-started' | 'in-progress' | 'stopped';
+  showUserNames: boolean;
   createdAt: Date;
 }

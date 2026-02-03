@@ -133,6 +133,15 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('toggle-user-names', ({ boardId, userId }) => {
+    const result = boardService.toggleUserNames(boardId, userId);
+    if (result && !result.error) {
+      io.to(boardId).emit('user-names-toggled', { boardId, showUserNames: result.showUserNames });
+    } else {
+      socket.emit('retro-error', { error: result?.error || 'Failed to toggle username visibility' });
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });

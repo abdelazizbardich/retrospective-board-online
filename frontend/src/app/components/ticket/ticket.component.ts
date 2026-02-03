@@ -13,6 +13,7 @@ export class TicketComponent {
   @Input() ticket!: Ticket;
   @Input() userId!: string;
   @Input() isAdmin: boolean = false;
+  @Input() showUserNames: boolean = true;
   @Output() voteTicket = new EventEmitter<string>();
   @Output() unvoteTicket = new EventEmitter<string>();
   @Output() updateStatus = new EventEmitter<string>();

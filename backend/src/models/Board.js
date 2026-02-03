@@ -6,6 +6,7 @@ class Board {
     this.createdAt = new Date();
     this.adminUserId = null; // Track the admin user
     this.retroState = 'not-started'; // not-started, in-progress, stopped
+    this.showUserNames = true; // Toggle for showing/hiding usernames (default: visible)
   }
 
   addColumn(column) {
@@ -42,6 +43,14 @@ class Board {
       return true;
     }
     return false;
+  }
+
+  toggleUserNames(userId) {
+    if (!this.isAdmin(userId)) {
+      return { error: 'Only admin can toggle username visibility' };
+    }
+    this.showUserNames = !this.showUserNames;
+    return true;
   }
 }
 

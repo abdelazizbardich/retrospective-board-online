@@ -16,7 +16,7 @@
     {{ ticket.content }}
   </div>
   
-  <div *ngIf="isAdmin && ticket.createdByName" class="ticket-meta">
+  <div *ngIf="isAdmin && showUserNames && ticket.createdByName" class="ticket-meta">
     <span class="meta-label">Created by:</span>
     <span class="meta-value">{{ ticket.createdByName }}</span>
   </div>
@@ -31,7 +31,7 @@
     </button>
   </div>
   
-  <div *ngIf="isAdmin && ticket.votes > 0" class="ticket-voters">
+  <div *ngIf="isAdmin && showUserNames && ticket.votes > 0" class="ticket-voters">
     <span class="voters-label">Voters:</span>
     <span class="voters-list">{{ getVotersDisplay() }}</span>
   </div>

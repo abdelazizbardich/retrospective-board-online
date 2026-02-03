@@ -97,6 +97,17 @@
   transform: translateY(0);
 }
 
+.toggle-btn {
+  background: #2196F3;
+  color: white;
+}
+
+.toggle-btn:hover {
+  background: #0b7dda;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
 .columns-container {
   display: flex;
   gap: 16px;

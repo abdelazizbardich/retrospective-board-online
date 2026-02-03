@@ -207,6 +207,17 @@ class BoardService {
     }
     return { error: 'Retro not in progress' };
   }
+
+  toggleUserNames(boardId, userId) {
+    const board = this.boards.get(boardId);
+    if (!board) return null;
+
+    const result = board.toggleUserNames(userId);
+    if (result === true) {
+      return board;
+    }
+    return result;
+  }
 }
 
 module.exports = new BoardService();

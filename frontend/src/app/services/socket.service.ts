@@ -23,6 +23,7 @@ export class SocketService {
   private retroStarted = new Subject<any>();
   private retroStopped = new Subject<any>();
   private retroError = new Subject<any>();
+  private userNamesToggled = new Subject<any>();
 
   constructor() {}
 
@@ -82,6 +83,10 @@ export class SocketService {
 
     this.socket.on('retro-error', (data) => {
       this.retroError.next(data);
+    });
+
+    this.socket.on('user-names-toggled', (data) => {
+      this.userNamesToggled.next(data);
     });
   }
 
@@ -148,6 +153,10 @@ export class SocketService {
     this.socket.emit('stop-retro', { boardId, userId });
   }
 
+  toggleUserNames(boardId: string, userId: string): void {
+    this.socket.emit('toggle-user-names', { boardId, userId });
+  }
+
   // Observable getters
   onColumnCreated(): Observable<any> {
     return this.columnCreated.asObservable();
@@ -199,5 +208,9 @@ export class SocketService {
 
   onRetroError(): Observable<any> {
     return this.retroError.asObservable();
+  }
+
+  onUserNamesToggled(): Observable<any> {
+    return this.userNamesToggled.asObservable();
   }
 }

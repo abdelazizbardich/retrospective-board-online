@@ -200,6 +200,14 @@ export class BoardComponent implements OnInit, OnDestroy {
         alert(data.error);
       })
     );
+
+    this.subscriptions.push(
+      this.socketService.onUserNamesToggled().subscribe(data => {
+        if (this.board && data.boardId === this.board.id) {
+          this.board.showUserNames = data.showUserNames;
+        }
+      })
+    );
   }
 
   onAddColumn(): void {
@@ -296,6 +304,12 @@ export class BoardComponent implements OnInit, OnDestroy {
     }
   }
 
+  onToggleUserNames(): void {
+    if (this.board && this.isUserAdmin()) {
+      this.socketService.toggleUserNames(this.board.id, this.userId);
+    }
+  }
+
   isUserAdmin(): boolean {
     return this.board?.adminUserId === this.userId;
   }
@@ -315,5 +329,9 @@ export class BoardComponent implements OnInit, OnDestroy {
       case 'stopped': return 'Stopped';
       default: return 'Unknown';
     }
+  }
+
+  getUserNamesButtonText(): string {
+    return this.board?.showUserNames ? 'Hide Usernames' : 'Show Usernames';
   }
 }
