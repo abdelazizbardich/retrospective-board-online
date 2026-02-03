@@ -20,6 +20,7 @@ export class BoardComponent implements OnInit, OnDestroy {
   board: Board | null = null;
   userId: string = '';
   username: string = '';
+  isAdmin: boolean = false;
   showAddColumn = false;
   newColumnName = '';
   private subscriptions: Subscription[] = [];
@@ -29,9 +30,10 @@ export class BoardComponent implements OnInit, OnDestroy {
     private socketService: SocketService,
     private userService: UserService
   ) {
-    // Get user ID and username from service
+    // Get user ID, username, and admin status from service
     this.userId = this.userService.getUserId();
     this.username = this.userService.getUsernameValue();
+    this.isAdmin = this.userService.getIsAdminValue();
   }
 
   ngOnInit(): void {
@@ -58,6 +60,11 @@ export class BoardComponent implements OnInit, OnDestroy {
       if (boards.length > 0) {
         this.board = boards[0];
         this.socketService.joinBoard(this.board.id);
+        
+        // If this user is admin and board doesn't have an admin yet, set this user as admin
+        if (this.isAdmin && !this.board.adminUserId) {
+          this.socketService.setAdmin(this.board.id, this.userId);
+        }
       }
     });
   }
@@ -160,6 +167,37 @@ export class BoardComponent implements OnInit, OnDestroy {
         }
       })
     );
+
+    // Admin events
+    this.subscriptions.push(
+      this.socketService.onAdminSet().subscribe(data => {
+        if (this.board && data.boardId === this.board.id) {
+          this.board.adminUserId = data.adminUserId;
+        }
+      })
+    );
+
+    this.subscriptions.push(
+      this.socketService.onRetroStarted().subscribe(data => {
+        if (this.board && data.boardId === this.board.id) {
+          this.board.retroState = data.retroState;
+        }
+      })
+    );
+
+    this.subscriptions.push(
+      this.socketService.onRetroStopped().subscribe(data => {
+        if (this.board && data.boardId === this.board.id) {
+          this.board.retroState = data.retroState;
+        }
+      })
+    );
+
+    this.subscriptions.push(
+      this.socketService.onRetroError().subscribe(data => {
+        alert(data.error);
+      })
+    );
   }
 
   onAddColumn(): void {
@@ -178,19 +216,37 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   onAddTicket(event: { columnId: string, content: string }): void {
     if (this.board) {
-      this.socketService.createTicket(this.board.id, event.columnId, event.content);
+      this.socketService.createTicket(
+        this.board.id, 
+        event.columnId, 
+        event.content, 
+        this.userId, 
+        this.username
+      );
     }
   }
 
   onVoteTicket(event: { columnId: string, ticketId: string }): void {
     if (this.board) {
-      this.socketService.voteTicket(this.board.id, event.columnId, event.ticketId, this.userId);
+      this.socketService.voteTicket(
+        this.board.id, 
+        event.columnId, 
+        event.ticketId, 
+        this.userId, 
+        this.username
+      );
     }
   }
 
   onUnvoteTicket(event: { columnId: string, ticketId: string }): void {
     if (this.board) {
-      this.socketService.unvoteTicket(this.board.id, event.columnId, event.ticketId, this.userId);
+      this.socketService.unvoteTicket(
+        this.board.id, 
+        event.columnId, 
+        event.ticketId, 
+        this.userId, 
+        this.username
+      );
     }
   }
 
@@ -224,5 +280,38 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   getConnectedLists(): string[] {
     return this.board ? this.board.columns.map(c => c.id) : [];
+  }
+
+  onStartRetro(): void {
+    if (this.board && this.isUserAdmin()) {
+      this.socketService.startRetro(this.board.id, this.userId);
+    }
+  }
+
+  onStopRetro(): void {
+    if (this.board && this.isUserAdmin()) {
+      this.socketService.stopRetro(this.board.id, this.userId);
+    }
+  }
+
+  isUserAdmin(): boolean {
+    return this.board?.adminUserId === this.userId;
+  }
+
+  canStartRetro(): boolean {
+    return this.board?.retroState === 'not-started' && this.isUserAdmin();
+  }
+
+  canStopRetro(): boolean {
+    return this.board?.retroState === 'in-progress' && this.isUserAdmin();
+  }
+
+  getRetroStateDisplay(): string {
+    switch (this.board?.retroState) {
+      case 'not-started': return 'Not Started';
+      case 'in-progress': return 'In Progress';
+      case 'stopped': return 'Stopped';
+      default: return 'Unknown';
+    }
   }
 }

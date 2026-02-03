@@ -16,6 +16,7 @@ const MAX_USERNAME_LENGTH = 20;
 })
 export class LobbyComponent {
   username: string = '';
+  isAdmin: boolean = false;
   errorMessage: string = '';
   readonly maxUsernameLength = MAX_USERNAME_LENGTH;
 
@@ -42,8 +43,9 @@ export class LobbyComponent {
       return;
     }
 
-    // Save username and navigate to board
+    // Save username and admin status, then navigate to board
     this.userService.setUsername(trimmedUsername);
+    this.userService.setIsAdmin(this.isAdmin);
     this.router.navigate(['/board']);
   }
 }

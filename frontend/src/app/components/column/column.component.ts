@@ -16,6 +16,7 @@ export class ColumnComponent {
   @Input() column!: Column;
   @Input() boardId!: string;
   @Input() userId!: string;
+  @Input() isAdmin: boolean = false;
   @Output() addTicket = new EventEmitter<{ columnId: string, content: string }>();
   @Output() voteTicket = new EventEmitter<{ columnId: string, ticketId: string }>();
   @Output() unvoteTicket = new EventEmitter<{ columnId: string, ticketId: string }>();

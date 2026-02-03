@@ -19,6 +19,10 @@ export class SocketService {
   private ticketMoved = new Subject<any>();
   private ticketVoted = new Subject<any>();
   private ticketUnvoted = new Subject<any>();
+  private adminSet = new Subject<any>();
+  private retroStarted = new Subject<any>();
+  private retroStopped = new Subject<any>();
+  private retroError = new Subject<any>();
 
   constructor() {}
 
@@ -63,6 +67,22 @@ export class SocketService {
     this.socket.on('ticket-unvoted', (data) => {
       this.ticketUnvoted.next(data);
     });
+
+    this.socket.on('admin-set', (data) => {
+      this.adminSet.next(data);
+    });
+
+    this.socket.on('retro-started', (data) => {
+      this.retroStarted.next(data);
+    });
+
+    this.socket.on('retro-stopped', (data) => {
+      this.retroStopped.next(data);
+    });
+
+    this.socket.on('retro-error', (data) => {
+      this.retroError.next(data);
+    });
   }
 
   disconnect(): void {
@@ -92,8 +112,8 @@ export class SocketService {
     this.socket.emit('delete-column', { boardId, columnId });
   }
 
-  createTicket(boardId: string, columnId: string, content: string): void {
-    this.socket.emit('create-ticket', { boardId, columnId, content });
+  createTicket(boardId: string, columnId: string, content: string, createdBy?: string, createdByName?: string): void {
+    this.socket.emit('create-ticket', { boardId, columnId, content, createdBy, createdByName });
   }
 
   updateTicket(boardId: string, columnId: string, ticketId: string, updates: any): void {
@@ -108,12 +128,24 @@ export class SocketService {
     this.socket.emit('move-ticket', { boardId, sourceColumnId, targetColumnId, ticketId });
   }
 
-  voteTicket(boardId: string, columnId: string, ticketId: string, userId: string): void {
-    this.socket.emit('vote-ticket', { boardId, columnId, ticketId, userId });
+  voteTicket(boardId: string, columnId: string, ticketId: string, userId: string, userName?: string): void {
+    this.socket.emit('vote-ticket', { boardId, columnId, ticketId, userId, userName });
   }
 
-  unvoteTicket(boardId: string, columnId: string, ticketId: string, userId: string): void {
-    this.socket.emit('unvote-ticket', { boardId, columnId, ticketId, userId });
+  unvoteTicket(boardId: string, columnId: string, ticketId: string, userId: string, userName?: string): void {
+    this.socket.emit('unvote-ticket', { boardId, columnId, ticketId, userId, userName });
+  }
+
+  setAdmin(boardId: string, userId: string): void {
+    this.socket.emit('set-admin', { boardId, userId });
+  }
+
+  startRetro(boardId: string, userId: string): void {
+    this.socket.emit('start-retro', { boardId, userId });
+  }
+
+  stopRetro(boardId: string, userId: string): void {
+    this.socket.emit('stop-retro', { boardId, userId });
   }
 
   // Observable getters
@@ -151,5 +183,21 @@ export class SocketService {
 
   onTicketUnvoted(): Observable<any> {
     return this.ticketUnvoted.asObservable();
+  }
+
+  onAdminSet(): Observable<any> {
+    return this.adminSet.asObservable();
+  }
+
+  onRetroStarted(): Observable<any> {
+    return this.retroStarted.asObservable();
+  }
+
+  onRetroStopped(): Observable<any> {
+    return this.retroStopped.asObservable();
+  }
+
+  onRetroError(): Observable<any> {
+    return this.retroError.asObservable();
   }
 }

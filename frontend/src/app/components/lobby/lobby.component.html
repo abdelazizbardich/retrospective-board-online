@@ -17,6 +17,18 @@
         <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
       </div>
       
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="isAdmin" 
+            name="isAdmin"
+          />
+          <span class="checkbox-text">Join as Admin</span>
+        </label>
+        <p class="admin-info">Admins can start/stop retro and view creator and voter details</p>
+      </div>
+      
       <button type="submit" class="join-btn">Join Board</button>
     </form>
   </div>

@@ -18,6 +18,7 @@
       <app-ticket
         [ticket]="ticket"
         [userId]="userId"
+        [isAdmin]="isAdmin"
         (voteTicket)="onVoteTicket($event)"
         (unvoteTicket)="onUnvoteTicket($event)"
         (updateStatus)="onUpdateStatus(ticket.id, $event)"

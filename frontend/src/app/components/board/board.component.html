@@ -1,7 +1,27 @@
 <div class="board-container" *ngIf="board">
   <header class="board-header">
     <h1 class="board-title">{{ board.name }}</h1>
-    <div class="user-info">User: {{ username }}</div>
+    <div class="header-info">
+      <div class="user-info">
+        <span>User: {{ username }}</span>
+        <span *ngIf="isUserAdmin()" class="admin-badge">Admin</span>
+      </div>
+      <div class="retro-controls" *ngIf="isUserAdmin()">
+        <span class="retro-status">Status: {{ getRetroStateDisplay() }}</span>
+        <button 
+          *ngIf="canStartRetro()" 
+          class="retro-btn start-btn" 
+          (click)="onStartRetro()">
+          Start Retro
+        </button>
+        <button 
+          *ngIf="canStopRetro()" 
+          class="retro-btn stop-btn" 
+          (click)="onStopRetro()">
+          Stop Retro
+        </button>
+      </div>
+    </div>
   </header>
 
   <div class="columns-container">
@@ -10,6 +30,7 @@
       [column]="column"
       [boardId]="board.id"
       [userId]="userId"
+      [isAdmin]="isUserAdmin()"
       (addTicket)="onAddTicket($event)"
       (voteTicket)="onVoteTicket($event)"
       (unvoteTicket)="onUnvoteTicket($event)"

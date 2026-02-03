@@ -12,6 +12,7 @@ import { Ticket } from '../../models/board.model';
 export class TicketComponent {
   @Input() ticket!: Ticket;
   @Input() userId!: string;
+  @Input() isAdmin: boolean = false;
   @Output() voteTicket = new EventEmitter<string>();
   @Output() unvoteTicket = new EventEmitter<string>();
   @Output() updateStatus = new EventEmitter<string>();
@@ -41,5 +42,12 @@ export class TicketComponent {
 
   getStatusClass(): string {
     return `status-${this.ticket.status}`;
+  }
+
+  getVotersDisplay(): string {
+    if (this.ticket.voterNames && this.ticket.voterNames.length > 0) {
+      return this.ticket.voterNames.join(', ');
+    }
+    return 'No votes yet';
   }
 }

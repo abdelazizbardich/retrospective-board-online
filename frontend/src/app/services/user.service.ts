@@ -7,6 +7,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 export class UserService {
   private usernameSubject = new BehaviorSubject<string>('');
   private userIdSubject = new BehaviorSubject<string>('');
+  private isAdminSubject = new BehaviorSubject<boolean>(false);
 
   constructor() {
     // Generate a unique user ID using crypto.randomUUID with fallback
@@ -34,5 +35,17 @@ export class UserService {
 
   getUserId(): string {
     return this.userIdSubject.value;
+  }
+
+  setIsAdmin(isAdmin: boolean): void {
+    this.isAdminSubject.next(isAdmin);
+  }
+
+  getIsAdmin(): Observable<boolean> {
+    return this.isAdminSubject.asObservable();
+  }
+
+  getIsAdminValue(): boolean {
+    return this.isAdminSubject.value;
   }
 }

@@ -10,6 +10,8 @@
   align-items: center;
   margin-bottom: 20px;
   padding: 0 10px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .board-title {
@@ -20,12 +22,79 @@
   text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
+.header-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .user-info {
   color: white;
   background: rgba(255,255,255,0.2);
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-badge {
+  background: #ffd700;
+  color: #333;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.retro-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.retro-status {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.retro-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.start-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.start-btn:hover {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.stop-btn {
+  background: #f44336;
+  color: white;
+}
+
+.stop-btn:hover {
+  background: #da190b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.retro-btn:active {
+  transform: translateY(0);
 }
 
 .columns-container {

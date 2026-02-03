@@ -82,3 +82,30 @@
 .join-btn:active {
   transform: translateY(0);
 }
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.checkbox-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.admin-info {
+  font-size: 13px;
+  color: #666;
+  margin: 4px 0 0 30px;
+  line-height: 1.4;
+}
