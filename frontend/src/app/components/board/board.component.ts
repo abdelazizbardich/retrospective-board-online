@@ -27,7 +27,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     private socketService: SocketService
   ) {
     // Generate a simple user ID (in a real app, this would come from authentication)
-    this.userId = 'user-' + Math.random().toString(36).substr(2, 9);
+    this.userId = 'user-' + Math.random().toString(36).substring(2, 11);
   }
 
   ngOnInit(): void {
