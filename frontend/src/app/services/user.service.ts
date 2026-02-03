@@ -9,8 +9,8 @@ export class UserService {
   private userIdSubject = new BehaviorSubject<string>('');
 
   constructor() {
-    // Generate a unique user ID on service initialization
-    const userId = 'user-' + Math.random().toString(36).substring(2, 11);
+    // Generate a unique user ID using crypto.randomUUID for better uniqueness
+    const userId = crypto.randomUUID();
     this.userIdSubject.next(userId);
   }
 

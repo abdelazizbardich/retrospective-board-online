@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 
+const MIN_USERNAME_LENGTH = 2;
+const MAX_USERNAME_LENGTH = 20;
+
 @Component({
   selector: 'app-lobby',
   standalone: true,
@@ -14,6 +17,7 @@ import { UserService } from '../../services/user.service';
 export class LobbyComponent {
   username: string = '';
   errorMessage: string = '';
+  readonly maxUsernameLength = MAX_USERNAME_LENGTH;
 
   constructor(
     private userService: UserService,
@@ -28,13 +32,13 @@ export class LobbyComponent {
       return;
     }
 
-    if (trimmedUsername.length < 2) {
-      this.errorMessage = 'Username must be at least 2 characters';
+    if (trimmedUsername.length < MIN_USERNAME_LENGTH) {
+      this.errorMessage = `Username must be at least ${MIN_USERNAME_LENGTH} characters`;
       return;
     }
 
-    if (trimmedUsername.length > 20) {
-      this.errorMessage = 'Username must be 20 characters or less';
+    if (trimmedUsername.length > MAX_USERNAME_LENGTH) {
+      this.errorMessage = `Username must be ${MAX_USERNAME_LENGTH} characters or less`;
       return;
     }
 

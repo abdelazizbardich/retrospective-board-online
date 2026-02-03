@@ -11,7 +11,7 @@
           [(ngModel)]="username"
           name="username"
           placeholder="Enter your username..."
-          maxlength="20"
+          [maxlength]="maxUsernameLength"
           autofocus
         />
         <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
