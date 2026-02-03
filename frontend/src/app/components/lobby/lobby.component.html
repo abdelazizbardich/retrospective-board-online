@@ -1,0 +1,23 @@
+<div class="lobby-container">
+  <div class="lobby-card">
+    <h1 class="lobby-title">Retrospective Board</h1>
+    <p class="lobby-subtitle">Enter your username to join the board</p>
+    
+    <form (ngSubmit)="onJoinBoard()" class="lobby-form">
+      <div class="form-group">
+        <input
+          type="text"
+          class="username-input"
+          [(ngModel)]="username"
+          name="username"
+          placeholder="Enter your username..."
+          maxlength="20"
+          autofocus
+        />
+        <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+      </div>
+      
+      <button type="submit" class="join-btn">Join Board</button>
+    </form>
+  </div>
+</div>

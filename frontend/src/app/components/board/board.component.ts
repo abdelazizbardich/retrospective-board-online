@@ -2,9 +2,11 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { Router } from '@angular/router';
 import { Board, Column, Ticket } from '../../models/board.model';
 import { BoardService } from '../../services/board.service';
 import { SocketService } from '../../services/socket.service';
+import { UserService } from '../../services/user.service';
 import { ColumnComponent } from '../column/column.component';
 import { Subscription } from 'rxjs';
 
@@ -18,16 +20,25 @@ import { Subscription } from 'rxjs';
 export class BoardComponent implements OnInit, OnDestroy {
   board: Board | null = null;
   userId: string = '';
+  username: string = '';
   showAddColumn = false;
   newColumnName = '';
   private subscriptions: Subscription[] = [];
 
   constructor(
     private boardService: BoardService,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private userService: UserService,
+    private router: Router
   ) {
-    // Generate a simple user ID (in a real app, this would come from authentication)
-    this.userId = 'user-' + Math.random().toString(36).substring(2, 11);
+    // Get user ID and username from service
+    this.userId = this.userService.getUserId();
+    this.username = this.userService.getUsernameValue();
+    
+    // If no username is set, redirect to lobby
+    if (!this.username) {
+      this.router.navigate(['/']);
+    }
   }
 
   ngOnInit(): void {
