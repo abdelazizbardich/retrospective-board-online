@@ -147,6 +147,7 @@ export class BoardComponent implements OnInit, OnDestroy {
             if (ticket) {
               ticket.votes = data.ticket.votes;
               ticket.voters = data.ticket.voters;
+              ticket.voterNames = data.ticket.voterNames;
             }
           }
         }
@@ -162,6 +163,7 @@ export class BoardComponent implements OnInit, OnDestroy {
             if (ticket) {
               ticket.votes = data.ticket.votes;
               ticket.voters = data.ticket.voters;
+              ticket.voterNames = data.ticket.voterNames;
             }
           }
         }
