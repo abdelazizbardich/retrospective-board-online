@@ -9,8 +9,14 @@ export class UserService {
   private userIdSubject = new BehaviorSubject<string>('');
 
   constructor() {
-    // Generate a unique user ID using crypto.randomUUID for better uniqueness
-    const userId = crypto.randomUUID();
+    // Generate a unique user ID using crypto.randomUUID with fallback
+    let userId: string;
+    try {
+      userId = crypto.randomUUID();
+    } catch (error) {
+      // Fallback for non-secure contexts or older browsers
+      userId = 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+    }
     this.userIdSubject.next(userId);
   }
 
