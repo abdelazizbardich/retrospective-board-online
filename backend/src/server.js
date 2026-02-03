@@ -35,6 +35,13 @@ io.on('connection', (socket) => {
     console.log(`User ${socket.id} joined board ${boardId}`);
   });
 
+  socket.on('set-admin', ({ boardId, userId }) => {
+    const board = boardService.setAdmin(boardId, userId);
+    if (board) {
+      io.to(boardId).emit('admin-set', { boardId, adminUserId: board.adminUserId });
+    }
+  });
+
   socket.on('leave-board', (boardId) => {
     socket.leave(boardId);
     console.log(`User ${socket.id} left board ${boardId}`);
@@ -61,8 +68,8 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('create-ticket', ({ boardId, columnId, content }) => {
-    const ticket = boardService.createTicket(boardId, columnId, content);
+  socket.on('create-ticket', ({ boardId, columnId, content, createdBy, createdByName }) => {
+    const ticket = boardService.createTicket(boardId, columnId, content, createdBy, createdByName);
     if (ticket) {
       io.to(boardId).emit('ticket-created', { boardId, columnId, ticket });
     }
@@ -94,17 +101,35 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('vote-ticket', ({ boardId, columnId, ticketId, userId }) => {
-    const ticket = boardService.voteTicket(boardId, columnId, ticketId, userId);
+  socket.on('vote-ticket', ({ boardId, columnId, ticketId, userId, userName }) => {
+    const ticket = boardService.voteTicket(boardId, columnId, ticketId, userId, userName);
     if (ticket) {
       io.to(boardId).emit('ticket-voted', { boardId, columnId, ticket });
     }
   });
 
-  socket.on('unvote-ticket', ({ boardId, columnId, ticketId, userId }) => {
-    const ticket = boardService.unvoteTicket(boardId, columnId, ticketId, userId);
+  socket.on('unvote-ticket', ({ boardId, columnId, ticketId, userId, userName }) => {
+    const ticket = boardService.unvoteTicket(boardId, columnId, ticketId, userId, userName);
     if (ticket) {
       io.to(boardId).emit('ticket-unvoted', { boardId, columnId, ticket });
+    }
+  });
+
+  socket.on('start-retro', ({ boardId, userId }) => {
+    const result = boardService.startRetro(boardId, userId);
+    if (result && !result.error) {
+      io.to(boardId).emit('retro-started', { boardId, retroState: result.retroState });
+    } else {
+      socket.emit('retro-error', { error: result?.error || 'Failed to start retro' });
+    }
+  });
+
+  socket.on('stop-retro', ({ boardId, userId }) => {
+    const result = boardService.stopRetro(boardId, userId);
+    if (result && !result.error) {
+      io.to(boardId).emit('retro-stopped', { boardId, retroState: result.retroState });
+    } else {
+      socket.emit('retro-error', { error: result?.error || 'Failed to stop retro' });
     }
   });
 

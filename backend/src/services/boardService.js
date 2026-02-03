@@ -79,7 +79,7 @@ class BoardService {
   }
 
   // Ticket operations
-  createTicket(boardId, columnId, content) {
+  createTicket(boardId, columnId, content, createdBy = null, createdByName = null) {
     const board = this.boards.get(boardId);
     if (!board) return null;
 
@@ -87,7 +87,7 @@ class BoardService {
     if (!column) return null;
 
     const ticketId = uuidv4();
-    const ticket = new Ticket(ticketId, content, columnId);
+    const ticket = new Ticket(ticketId, content, columnId, createdBy, createdByName);
     column.addTicket(ticket);
     return ticket;
   }
@@ -143,7 +143,7 @@ class BoardService {
     return ticket;
   }
 
-  voteTicket(boardId, columnId, ticketId, userId) {
+  voteTicket(boardId, columnId, ticketId, userId, userName = null) {
     const board = this.boards.get(boardId);
     if (!board) return null;
 
@@ -153,11 +153,11 @@ class BoardService {
     const ticket = column.getTicket(ticketId);
     if (!ticket) return null;
 
-    ticket.addVote(userId);
+    ticket.addVote(userId, userName);
     return ticket;
   }
 
-  unvoteTicket(boardId, columnId, ticketId, userId) {
+  unvoteTicket(boardId, columnId, ticketId, userId, userName = null) {
     const board = this.boards.get(boardId);
     if (!board) return null;
 
@@ -167,8 +167,45 @@ class BoardService {
     const ticket = column.getTicket(ticketId);
     if (!ticket) return null;
 
-    ticket.removeVote(userId);
+    ticket.removeVote(userId, userName);
     return ticket;
+  }
+
+  // Admin operations
+  setAdmin(boardId, userId) {
+    const board = this.boards.get(boardId);
+    if (!board) return null;
+
+    board.setAdmin(userId);
+    return board;
+  }
+
+  startRetro(boardId, userId) {
+    const board = this.boards.get(boardId);
+    if (!board) return null;
+
+    if (!board.isAdmin(userId)) {
+      return { error: 'Only admin can start retro' };
+    }
+
+    if (board.startRetro()) {
+      return board;
+    }
+    return { error: 'Retro already started' };
+  }
+
+  stopRetro(boardId, userId) {
+    const board = this.boards.get(boardId);
+    if (!board) return null;
+
+    if (!board.isAdmin(userId)) {
+      return { error: 'Only admin can stop retro' };
+    }
+
+    if (board.stopRetro()) {
+      return board;
+    }
+    return { error: 'Retro not in progress' };
   }
 }
 
