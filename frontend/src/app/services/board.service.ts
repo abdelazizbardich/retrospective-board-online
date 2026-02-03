@@ -20,8 +20,12 @@ export class BoardService {
     return this.http.get<Board>(`${this.apiUrl}/boards/${boardId}`);
   }
 
-  createBoard(name: string): Observable<Board> {
-    return this.http.post<Board>(`${this.apiUrl}/boards`, { name });
+  createBoard(name: string, adminUserId?: string): Observable<Board> {
+    return this.http.post<Board>(`${this.apiUrl}/boards`, { name, adminUserId });
+  }
+
+  getBoardByRoomCode(roomCode: string): Observable<Board> {
+    return this.http.get<Board>(`${this.apiUrl}/boards/room/${roomCode}`);
   }
 
   deleteBoard(boardId: string): Observable<void> {

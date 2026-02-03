@@ -83,29 +83,92 @@
   transform: translateY(0);
 }
 
-.checkbox-label {
+.mode-selection {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  user-select: none;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
 }
 
-.checkbox-label input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-}
-
-.checkbox-text {
+.mode-btn {
+  padding: 16px 24px;
   font-size: 16px;
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.admin-info {
-  font-size: 13px;
+.create-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.join-btn-mode {
+  background: white;
+  color: #667eea;
+}
+
+.join-btn-mode:hover {
+  background: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.room-input,
+.room-code-input {
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.room-input:focus,
+.room-code-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.room-code-input {
+  text-transform: uppercase;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.back-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  background: transparent;
   color: #666;
-  margin: 4px 0 0 30px;
-  line-height: 1.4;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.back-btn:hover {
+  background: #f8f9fa;
+  border-color: #ccc;
+}
+
+.join-btn {
+  flex: 2;
 }

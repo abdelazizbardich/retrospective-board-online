@@ -1,9 +1,18 @@
 <div class="lobby-container">
   <div class="lobby-card">
     <h1 class="lobby-title">Retrospective Board</h1>
-    <p class="lobby-subtitle">Enter your username to join the board</p>
+    <p class="lobby-subtitle">{{ mode === 'create' ? 'Create a new room' : 'Join a room' }}</p>
     
-    <form (ngSubmit)="onJoinBoard()" class="lobby-form">
+    <div *ngIf="!mode" class="mode-selection">
+      <button class="mode-btn create-btn" (click)="mode = 'create'">
+        Create New Room
+      </button>
+      <button class="mode-btn join-btn-mode" (click)="mode = 'join'">
+        Join Existing Room
+      </button>
+    </div>
+
+    <form *ngIf="mode" (ngSubmit)="onSubmit()" class="lobby-form">
       <div class="form-group">
         <input
           type="text"
@@ -16,20 +25,38 @@
         />
         <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
       </div>
-      
-      <div class="form-group">
-        <label class="checkbox-label">
-          <input 
-            type="checkbox" 
-            [(ngModel)]="isAdmin" 
-            name="isAdmin"
-          />
-          <span class="checkbox-text">Join as Admin</span>
-        </label>
-        <p class="admin-info">Admins can start/stop retro and view creator and voter details</p>
+
+      <div *ngIf="mode === 'create'" class="form-group">
+        <input
+          type="text"
+          class="room-input"
+          [(ngModel)]="roomName"
+          name="roomName"
+          placeholder="Enter room name..."
+          maxlength="50"
+        />
+      </div>
+
+      <div *ngIf="mode === 'join'" class="form-group">
+        <input
+          type="text"
+          class="room-code-input"
+          [(ngModel)]="roomCode"
+          name="roomCode"
+          placeholder="Enter room code (e.g., ABC123)..."
+          maxlength="6"
+          (input)="roomCode = roomCode.toUpperCase()"
+        />
       </div>
       
-      <button type="submit" class="join-btn">Join Board</button>
+      <div class="form-actions">
+        <button type="submit" class="join-btn">
+          {{ mode === 'create' ? 'Create Room' : 'Join Room' }}
+        </button>
+        <button type="button" class="back-btn" (click)="mode = null">
+          Back
+        </button>
+      </div>
     </form>
   </div>
 </div>

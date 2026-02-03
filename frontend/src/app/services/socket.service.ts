@@ -24,6 +24,11 @@ export class SocketService {
   private retroStopped = new Subject<any>();
   private retroError = new Subject<any>();
   private userNamesToggled = new Subject<any>();
+  private participantJoined = new Subject<any>();
+  private timerStarted = new Subject<any>();
+  private timerStopped = new Subject<any>();
+  private sessionPhaseChanged = new Subject<any>();
+  private sessionEnded = new Subject<any>();
 
   constructor() {}
 
@@ -87,6 +92,26 @@ export class SocketService {
 
     this.socket.on('user-names-toggled', (data) => {
       this.userNamesToggled.next(data);
+    });
+
+    this.socket.on('participant-joined', (data) => {
+      this.participantJoined.next(data);
+    });
+
+    this.socket.on('timer-started', (data) => {
+      this.timerStarted.next(data);
+    });
+
+    this.socket.on('timer-stopped', (data) => {
+      this.timerStopped.next(data);
+    });
+
+    this.socket.on('session-phase-changed', (data) => {
+      this.sessionPhaseChanged.next(data);
+    });
+
+    this.socket.on('session-ended', (data) => {
+      this.sessionEnded.next(data);
     });
   }
 
@@ -157,6 +182,26 @@ export class SocketService {
     this.socket.emit('toggle-user-names', { boardId, userId });
   }
 
+  joinRoom(boardId: string, userId: string, username: string): void {
+    this.socket.emit('join-room', { boardId, userId, username });
+  }
+
+  startTimer(boardId: string, type: 'creating' | 'voting', durationMinutes: number, userId: string): void {
+    this.socket.emit('start-timer', { boardId, type, durationMinutes, userId });
+  }
+
+  stopTimer(boardId: string, userId: string): void {
+    this.socket.emit('stop-timer', { boardId, userId });
+  }
+
+  setSessionPhase(boardId: string, phase: string, userId: string): void {
+    this.socket.emit('set-session-phase', { boardId, phase, userId });
+  }
+
+  endSession(boardId: string, userId: string): void {
+    this.socket.emit('end-session', { boardId, userId });
+  }
+
   // Observable getters
   onColumnCreated(): Observable<any> {
     return this.columnCreated.asObservable();
@@ -212,5 +257,25 @@ export class SocketService {
 
   onUserNamesToggled(): Observable<any> {
     return this.userNamesToggled.asObservable();
+  }
+
+  onParticipantJoined(): Observable<any> {
+    return this.participantJoined.asObservable();
+  }
+
+  onTimerStarted(): Observable<any> {
+    return this.timerStarted.asObservable();
+  }
+
+  onTimerStopped(): Observable<any> {
+    return this.timerStopped.asObservable();
+  }
+
+  onSessionPhaseChanged(): Observable<any> {
+    return this.sessionPhaseChanged.asObservable();
+  }
+
+  onSessionEnded(): Observable<any> {
+    return this.sessionEnded.asObservable();
   }
 }
