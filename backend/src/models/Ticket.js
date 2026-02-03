@@ -38,11 +38,9 @@ class Ticket {
     const index = this.voters.indexOf(userId);
     if (index > -1) {
       this.voters.splice(index, 1);
-      if (userName && this.voterNames.includes(userName)) {
-        const nameIndex = this.voterNames.indexOf(userName);
-        if (nameIndex > -1) {
-          this.voterNames.splice(nameIndex, 1);
-        }
+      // Remove voter name at the same index to maintain synchronization
+      if (this.voterNames && this.voterNames.length > index) {
+        this.voterNames.splice(index, 1);
       }
       this.votes--;
       this.updatedAt = new Date();
