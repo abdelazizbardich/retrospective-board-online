@@ -1,0 +1,119 @@
+import { nanoid } from "nanoid";
+import type { Board, Column } from "./types";
+import { BOARD_TEMPLATES } from "./types";
+import { supabase } from "./supabase";
+
+export async function createBoard(name: string, templateId: string): Promise<Board> {
+  const template = BOARD_TEMPLATES.find((t) => t.id === templateId);
+  if (!template) throw new Error(`Template "${templateId}" not found`);
+
+  const boardId = nanoid(10);
+  const columns: Column[] = template.columns.map((col) => ({
+    id: nanoid(8),
+    title: col.title,
+    color: col.color,
+    emoji: col.emoji,
+    cards: [],
+  }));
+
+  const board: Board = {
+    id: boardId,
+    name,
+    createdAt: Date.now(),
+    columns,
+    participants: [],
+    hostId: null,
+    timer: { running: false, remaining: 300, total: 300 },
+    phase: "writing",
+    maxVotesPerUser: 5,
+  };
+
+  const { error } = await supabase
+    .from("boards")
+    .insert({ id: board.id, name: board.name, created_at: board.createdAt, data: board });
+  if (error) throw error;
+  return board;
+}
+
+export async function getBoard(id: string): Promise<Board | undefined> {
+  const { data, error } = await supabase
+    .from("boards")
+    .select("data")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.data as Board | undefined;
+}
+
+export async function updateBoard(
+  id: string,
+  updater: (board: Board) => Board
+): Promise<Board | undefined> {
+  const board = await getBoard(id);
+  if (!board) return undefined;
+  const updated = updater(board);
+  const { error } = await supabase.from("boards").update({ data: updated }).eq("id", id);
+  if (error) throw error;
+  return updated;
+}
+
+export async function deleteBoard(id: string): Promise<boolean> {
+  const { error, count } = await supabase
+    .from("boards")
+    .delete({ count: "exact" })
+    .eq("id", id);
+  if (error) throw error;
+  return (count ?? 0) > 0;
+}
+
+export async function getAllBoards(): Promise<Board[]> {
+  const { data, error } = await supabase
+    .from("boards")
+    .select("data")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row) => row.data as Board);
+}
+
+const IMPORT_COLORS = ["green", "red", "blue", "yellow", "purple", "orange"];
+const IMPORT_EMOJIS = ["📝", "💬", "🎯", "💡", "⭐", "🔧", "📌", "🚀"];
+
+export async function createBoardFromImport(
+  name: string,
+  importedColumns: { title: string; cards: string[] }[]
+): Promise<Board> {
+  const boardId = nanoid(10);
+  const columns: Column[] = importedColumns.map((col, i) => ({
+    id: nanoid(8),
+    title: col.title,
+    color: IMPORT_COLORS[i % IMPORT_COLORS.length],
+    emoji: IMPORT_EMOJIS[i % IMPORT_EMOJIS.length],
+    cards: col.cards.map((text) => ({
+      id: nanoid(8),
+      text,
+      authorId: "import",
+      anonymous: false,
+      votes: [],
+      reactions: {},
+      createdAt: Date.now(),
+    })),
+  }));
+
+  const board: Board = {
+    id: boardId,
+    name,
+    createdAt: Date.now(),
+    columns,
+    participants: [],
+    hostId: null,
+    timer: { running: false, remaining: 300, total: 300 },
+    phase: "writing",
+    maxVotesPerUser: 5,
+  };
+
+  const { error } = await supabase
+    .from("boards")
+    .insert({ id: board.id, name: board.name, created_at: board.createdAt, data: board });
+  if (error) throw error;
+  return board;
+}

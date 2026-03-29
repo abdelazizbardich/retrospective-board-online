@@ -1,0 +1,74 @@
+{
+  "id": "4n0npCWJs2",
+  "name": "Applimedia bord",
+  "createdAt": 1774787083979,
+  "columns": [
+    {
+      "id": "zhk8W-yH",
+      "title": "What went well",
+      "color": "green",
+      "emoji": "✅",
+      "cards": [
+        {
+          "id": "ljNn1Uyi",
+          "text": "qsdfzfze",
+          "authorId": "_8SV31Ln",
+          "votes": [],
+          "createdAt": 1774787721145
+        },
+        {
+          "id": "WCyVs3QJ",
+          "text": "qzdqsdzqs",
+          "authorId": "3b6b2KAE",
+          "anonymous": false,
+          "votes": [],
+          "createdAt": 1774788310990
+        },
+        {
+          "id": "rilrOv18",
+          "text": "qsfdsqfsqdf",
+          "authorId": "3b6b2KAE",
+          "anonymous": true,
+          "votes": [],
+          "createdAt": 1774788316344
+        }
+      ]
+    },
+    {
+      "id": "loPBXK5S",
+      "title": "What didn't go well",
+      "color": "red",
+      "emoji": "❌",
+      "cards": []
+    },
+    {
+      "id": "_6H6roP9",
+      "title": "Action items",
+      "color": "blue",
+      "emoji": "🎯",
+      "cards": []
+    }
+  ],
+  "participants": [
+    {
+      "id": "3b6b2KAE",
+      "name": "abardich",
+      "joinedAt": 1774787087892,
+      "anonymous": true
+    },
+    {
+      "id": "_8SV31Ln",
+      "name": "qzdsf",
+      "joinedAt": 1774787715699,
+      "anonymous": false
+    }
+  ],
+  "hostId": "3b6b2KAE",
+  "timer": {
+    "running": false,
+    "remaining": 300,
+    "total": 300
+  },
+  "phase": "writing",
+  "maxVotesPerUser": 5
+}
