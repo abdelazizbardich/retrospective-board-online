@@ -10,7 +10,7 @@ export default async function DashboardPage() {
     (s, b) => s + b.columns.reduce((cs, col) => cs + col.cards.length, 0),
     0
   );
-  const activeBoards = boards.filter((b) => b.phase !== "actions").length;
+  const activeBoards = boards.filter((b) => b.phase !== "done").length;
 
   const stats = [
     { label: "Total Boards", value: boards.length, icon: LayoutGrid, href: "/dashboard/boards" },
