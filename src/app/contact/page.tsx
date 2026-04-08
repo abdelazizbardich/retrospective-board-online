@@ -54,7 +54,7 @@ export default function ContactPage() {
             Fill in the form below and we&apos;ll get back to you as soon as possible.
           </p>
           <form
-            action={`mailto:{SITE_EMAIL}`}
+            action={`mailto:${SITE_EMAIL}`}
             method="GET"
             className="mt-6 space-y-4"
           >
