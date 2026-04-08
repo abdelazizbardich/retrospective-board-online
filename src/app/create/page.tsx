@@ -116,7 +116,7 @@ export default function CreateBoardPage() {
   };
 
   const processFile = useCallback(async (file: File) => {
-    if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
       setImportError("Please upload an Excel file (.xlsx or .xls)");
       return;
     }

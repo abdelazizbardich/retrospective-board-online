@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LayoutGrid } from "lucide-react";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.app";
+import { SITE_URL } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Terms of Service",

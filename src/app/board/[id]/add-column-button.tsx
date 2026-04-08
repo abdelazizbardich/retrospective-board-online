@@ -40,7 +40,7 @@ export function AddColumnButton() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex min-w-65 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border/50 bg-muted/20 p-6 text-muted-foreground/60 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all group"
+        className="flex min-w-64 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border/50 bg-muted/20 p-6 text-muted-foreground/60 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all group"
       >
         <span className="flex size-10 items-center justify-center rounded-full border-2 border-dashed border-current transition-all group-hover:scale-110">
           <Plus className="size-5" />

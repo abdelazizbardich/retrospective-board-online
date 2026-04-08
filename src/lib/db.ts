@@ -43,4 +43,5 @@ async function ensureSchema(): Promise<void> {
   _initialized = true;
 }
 
+// Export the getClient function directly instead of using a problematic Proxy
 export { getClient, ensureSchema };

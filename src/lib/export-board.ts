@@ -64,8 +64,11 @@ export function exportBoardToExcel(board: Board) {
     }
     const colSheet = XLSX.utils.aoa_to_sheet(rows);
     colSheet["!cols"] = [{ wch: 50 }, { wch: 18 }, { wch: 8 }];
-    // Sheet names max 31 chars and no special chars
-    const sheetName = `${col.emoji} ${col.title}`.slice(0, 31).replace(/[[\]*?/\\]/g, "");
+    // Sheet names max 31 chars and must not contain: \ / ? * : [ ]
+    const sheetName = `${col.emoji} ${col.title}`
+      .replace(/[\\/\?*:\[\]]/g, "") // Remove all invalid Excel sheet name characters
+      .slice(0, 31)
+      .trim() || "Sheet"; // Ensure name is not empty after sanitization
     XLSX.utils.book_append_sheet(wb, colSheet, sheetName);
   }
 

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LayoutGrid, Mail } from "lucide-react";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.app";
+import { SITE_URL, SITE_EMAIL } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -36,7 +35,7 @@ export default function ContactPage() {
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
           <a
-            href="mailto:hello@sprintsplans.app"
+            href={`mailto:${SITE_EMAIL}`}
             className="group flex items-start gap-4 rounded-2xl border border-border bg-background p-6 transition-shadow hover:shadow-md"
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -44,7 +43,7 @@ export default function ContactPage() {
             </div>
             <div>
               <p className="font-semibold">Email</p>
-              <p className="mt-1 text-sm text-muted-foreground break-all">hello@sprintsplans.app</p>
+              <p className="mt-1 text-sm text-muted-foreground break-all">{SITE_EMAIL}</p>
             </div>
           </a>
         </div>
@@ -55,7 +54,7 @@ export default function ContactPage() {
             Fill in the form below and we&apos;ll get back to you as soon as possible.
           </p>
           <form
-            action={`mailto:hello@sprintsplans.app`}
+            action={`mailto:{SITE_EMAIL}`}
             method="GET"
             className="mt-6 space-y-4"
           >

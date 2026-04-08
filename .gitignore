@@ -44,3 +44,7 @@ next-env.d.ts
 data/*.db
 data/*.db-wal
 data/*.db-shm
+
+# runtime data files
+data/users.json
+data/boards/*.json

@@ -65,9 +65,11 @@ export default function DashboardLogin() {
               {loading ? "Signing in…" : "Sign In →"}
             </button>
           </form>
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            Default password: <code className="font-mono">admin</code> — set <code className="font-mono">ADMIN_PASSWORD</code> env var to change
-          </p>
+          {process.env.NODE_ENV === "development" && (
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              Default password: <code className="font-mono">admin</code> — set <code className="font-mono">ADMIN_PASSWORD</code> env var to change
+            </p>
+          )}
         </div>
       </div>
     </div>

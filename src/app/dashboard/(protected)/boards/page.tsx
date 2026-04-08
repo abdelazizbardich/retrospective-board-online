@@ -20,7 +20,7 @@ const PHASE_COLORS: Record<string, string> = {
   grouping:   "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400",
   voting:     "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400",
   discussing: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400",
-  actions:    "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400",
+  done:       "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400",
 };
 
 export default function BoardsPage() {

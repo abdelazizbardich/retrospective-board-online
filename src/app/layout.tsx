@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { SITE_URL, SITE_NAME } from "@/lib/config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,8 +13,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://retroboard.app";
-const SITE_NAME = "SprintsPlans";
 const DEFAULT_TITLE = "SprintsPlans — Run Better Retrospectives Online";
 const DEFAULT_DESCRIPTION =
   "The simplest way to run agile retrospectives with your team. Real-time collaboration, anonymous voting, and actionable insights — free, no login required.";
