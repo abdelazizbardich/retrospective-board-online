@@ -43,7 +43,7 @@ interface BoardContextValue {
   toggleAnonymous: () => Promise<void>;
   reactToCard: (columnId: string, cardId: string, emoji: string) => Promise<void>;
   assignHost: (newHostId: string) => Promise<void>;
-  sendMessage: (text: string, toId?: string, toName?: string) => Promise<void>;
+  sendMessage: (text: string, toId?: string, toName?: string, replyToId?: string, replyToText?: string, replyToAuthor?: string) => Promise<void>;
   chatOpen: boolean;
   setChatOpen: (open: boolean) => void;
   unreadCount: number;
@@ -448,13 +448,14 @@ export function BoardProvider({
   }, [boardId, participant]);
 
   const sendMessage = useCallback(
-    async (text: string, toId?: string, toName?: string) => {
+    async (text: string, toId?: string, toName?: string, replyToId?: string, replyToText?: string, replyToAuthor?: string) => {
       await patchBoard({
         action: "send-message",
         participantId: participant?.id,
         participantName: participant?.name,
         text,
         ...(toId && toName ? { toId, toName } : {}),
+        ...(replyToId && replyToText && replyToAuthor ? { replyToId, replyToText, replyToAuthor } : {}),
       });
     },
     [patchBoard, participant]

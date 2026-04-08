@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useBoardContext } from "@/lib/board-context";
-import { X, Send, Users, Lock, Hash, ThumbsUp } from "lucide-react";
+import { X, Send, Hash, ThumbsUp, CornerUpLeft } from "lucide-react";
 import { sfxChatSend, sfxChatReceive } from "@/lib/sounds";
 
 const STRIPE_COLORS: Record<string, string> = {
@@ -114,8 +114,7 @@ function ChatMessageText({ text, cards, isMe }: { text: string; cards: Map<strin
 export function ChatDrawer() {
   const { board, participant, sendMessage, chatOpen, setChatOpen } = useBoardContext();
   const [text, setText] = useState("");
-  const [dmTarget, setDmTarget] = useState<{ id: string; name: string } | null>(null);
-  const [showDmPicker, setShowDmPicker] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: string; text: string; authorName: string } | null>(null);
   const [showCardPicker, setShowCardPicker] = useState(false);
   const [cardFilter, setCardFilter] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
@@ -181,20 +180,16 @@ export function ChatDrawer() {
 
   if (!board || !participant) return null;
 
-  const messages = (board.messages || []).filter((m) => {
-    // Show general messages + DMs where user is sender or receiver
-    if (!m.toId) return true;
-    return m.authorId === participant.id || m.toId === participant.id;
-  });
-
-  const otherParticipants = board.participants.filter((p) => p.id !== participant.id && !p.left);
+  const messages = (board.messages || []).filter((m) => !m.toId);
 
   const handleSend = async () => {
     const trimmed = text.trim();
     if (!trimmed) return;
     setText("");
+    const reply = replyTo;
+    setReplyTo(null);
     sfxChatSend();
-    await sendMessage(trimmed, dmTarget?.id, dmTarget?.name);
+    await sendMessage(trimmed, undefined, undefined, reply?.id, reply?.text, reply?.authorName);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -244,60 +239,8 @@ export function ChatDrawer() {
         <div className="flex items-center gap-3 border-b border-border px-4 py-3 shrink-0">
           <div className="flex-1 min-w-0">
             <h2 className="text-sm font-bold">Chat</h2>
-            {dmTarget ? (
-              <button
-                onClick={() => setDmTarget(null)}
-                className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
-              >
-                <Lock className="size-3" />
-                DM: {dmTarget.name}
-                <X className="size-3" />
-              </button>
-            ) : (
-              <p className="text-xs text-muted-foreground">General</p>
-            )}
+            <p className="text-xs text-muted-foreground">Everyone</p>
           </div>
-
-          {/* DM picker toggle */}
-          <div className="relative">
-            <button
-              onClick={() => setShowDmPicker((v) => !v)}
-              className="rounded-lg border border-border p-1.5 hover:bg-muted transition-colors"
-              title="Send a direct message"
-            >
-              <Users className="size-4 text-muted-foreground" />
-            </button>
-            {showDmPicker && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowDmPicker(false)} />
-                <div className="absolute right-0 top-full mt-1 z-20 w-56 rounded-xl border border-border bg-background shadow-lg animate-fade-in-scale">
-                  <div className="px-3 py-2 border-b border-border">
-                    <span className="text-xs font-semibold text-muted-foreground">Direct message</span>
-                  </div>
-                  <button
-                    onClick={() => { setDmTarget(null); setShowDmPicker(false); }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors ${!dmTarget ? "font-semibold text-primary" : ""}`}
-                  >
-                    <Users className="size-4" />
-                    <span>General (everyone)</span>
-                  </button>
-                  {otherParticipants.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => { setDmTarget({ id: p.id, name: p.name }); setShowDmPicker(false); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors ${dmTarget?.id === p.id ? "font-semibold text-primary" : ""}`}
-                    >
-                      <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                        {p.name.charAt(0).toUpperCase()}
-                      </span>
-                      <span className="truncate">{p.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
           <button
             onClick={() => setChatOpen(false)}
             className="rounded-lg border border-border p-1.5 hover:bg-muted transition-colors"
@@ -317,7 +260,6 @@ export function ChatDrawer() {
           )}
           {messages.map((msg) => {
             const isMe = msg.authorId === participant.id;
-            const isDM = !!msg.toId;
             const isSystem = msg.authorId === "system";
 
             if (isSystem) {
@@ -333,38 +275,47 @@ export function ChatDrawer() {
             return (
               <div
                 key={msg.id}
-                className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                className={`flex flex-col group ${isMe ? "items-end" : "items-start"}`}
               >
                 {/* Author line */}
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  {!isMe && (
+                {!isMe && (
+                  <span className="text-xs font-semibold mb-0.5">{msg.authorName}</span>
+                )}
+                {/* Reply quote */}
+                {msg.replyToId && msg.replyToText && (
+                  <div className={`mb-1 flex items-start gap-1 max-w-[85%] ${isMe ? "flex-row-reverse" : ""}`}>
+                    <div className={`flex items-start gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] border-l-2 ${isMe ? "border-l-0 border-r-2 border-primary/40 bg-primary/10 text-primary/80" : "border-border bg-muted/60 text-muted-foreground"}`}>
+                      <CornerUpLeft className="size-2.5 shrink-0 mt-0.5 opacity-60" />
+                      <span className="font-semibold mr-1">{msg.replyToAuthor}:</span>
+                      <span className="line-clamp-1">{msg.replyToText}</span>
+                    </div>
+                  </div>
+                )}
+                {/* Bubble */}
+                <div className="flex items-end gap-1.5">
+                  {isMe && (
                     <button
-                      onClick={() => { setDmTarget({ id: msg.authorId, name: msg.authorName }); inputRef.current?.focus(); }}
-                      className="text-xs font-semibold hover:underline cursor-pointer"
+                      onClick={() => { setReplyTo({ id: msg.id, text: msg.text, authorName: msg.authorName }); inputRef.current?.focus(); }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-muted text-muted-foreground"
+                      title="Reply"
                     >
-                      {msg.authorName}
+                      <CornerUpLeft className="size-3.5" />
                     </button>
                   )}
-                  {isDM && (
-                    <span className="flex items-center gap-0.5 text-[10px] text-indigo-500 font-medium">
-                      <Lock className="size-2.5" />
-                      {isMe ? `to ${msg.toName}` : "DM"}
-                    </span>
+                  <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm break-words ${
+                    isMe ? "bg-primary text-primary-foreground rounded-br-md" : "bg-muted rounded-bl-md"
+                  }`}>
+                    <ChatMessageText text={msg.text} cards={cardMap} isMe={isMe} />
+                  </div>
+                  {!isMe && (
+                    <button
+                      onClick={() => { setReplyTo({ id: msg.id, text: msg.text, authorName: msg.authorName }); inputRef.current?.focus(); }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-muted text-muted-foreground"
+                      title="Reply"
+                    >
+                      <CornerUpLeft className="size-3.5" />
+                    </button>
                   )}
-                </div>
-                {/* Bubble */}
-                <div
-                  className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm break-words ${
-                    isMe
-                      ? isDM
-                        ? "bg-indigo-500 text-white rounded-br-md"
-                        : "bg-primary text-primary-foreground rounded-br-md"
-                      : isDM
-                        ? "bg-indigo-100 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/50 rounded-bl-md"
-                        : "bg-muted rounded-bl-md"
-                  }`}
-                >
-                  <ChatMessageText text={msg.text} cards={cardMap} isMe={isMe} />
                 </div>
                 <span className="text-[10px] text-muted-foreground mt-0.5">
                   {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -377,6 +328,19 @@ export function ChatDrawer() {
 
         {/* Input */}
         <div className="border-t border-border px-3 py-3 shrink-0">
+          {/* Reply preview */}
+          {replyTo && (
+            <div className="mb-2 flex items-center gap-2 rounded-xl bg-muted border border-border px-3 py-2">
+              <CornerUpLeft className="size-3.5 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-semibold text-primary">{replyTo.authorName}</span>
+                <p className="text-xs text-muted-foreground truncate">{replyTo.text}</p>
+              </div>
+              <button onClick={() => setReplyTo(null)} className="shrink-0 hover:text-foreground text-muted-foreground transition-colors">
+                <X className="size-3.5" />
+              </button>
+            </div>
+          )}
           {/* Card picker dropdown */}
           {showCardPicker && (
             <div className="mb-2 rounded-xl border border-border bg-background shadow-lg max-h-48 overflow-y-auto">
@@ -432,13 +396,9 @@ export function ChatDrawer() {
               value={text}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={dmTarget ? `DM to ${dmTarget.name}...` : "Type a message..."}
+              placeholder="Type a message..."
               maxLength={500}
-              className={`flex-1 rounded-xl border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
-                dmTarget
-                  ? "border-indigo-300 dark:border-indigo-700 focus:ring-indigo-500/50"
-                  : "border-border focus:ring-primary/50"
-              }`}
+              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <button
               onClick={handleSend}

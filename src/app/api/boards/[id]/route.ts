@@ -564,7 +564,7 @@ export async function PATCH(
     }
 
     case "send-message": {
-      const { participantId, participantName, text, toId, toName } = body;
+      const { participantId, participantName, text, toId, toName, replyToId, replyToText, replyToAuthor } = body;
       if (!participantId || !participantName) {
         return NextResponse.json({ error: "participantId and participantName required" }, { status: 400 });
       }
@@ -580,6 +580,7 @@ export async function PATCH(
         authorName: participantName,
         text: text.trim(),
         ...(toId && toName ? { toId, toName } : {}),
+        ...(replyToId && replyToText && replyToAuthor ? { replyToId, replyToText, replyToAuthor } : {}),
         createdAt: Date.now(),
       };
       const updated = await updateBoard(id, (b) => ({

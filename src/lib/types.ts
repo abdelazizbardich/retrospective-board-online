@@ -23,6 +23,9 @@ export interface ChatMessage {
   text: string;
   toId?: string; // if set, it's a DM to this participant
   toName?: string;
+  replyToId?: string;
+  replyToText?: string;
+  replyToAuthor?: string;
   createdAt: number;
 }
 
