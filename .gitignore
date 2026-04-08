@@ -1,30 +1,50 @@
-# Node modules
-node_modules/
-frontend/node_modules/
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Build outputs
-dist/
-build/
-frontend/dist/
-frontend/.angular/
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Logs
-*.log
-npm-debug.log*
-logs/
+# testing
+/coverage
 
-# IDE
-.vscode/
-.idea/
+# next.js
+/.next/
+/out/
 
-# OS
+# production
+/build
+
+# misc
 .DS_Store
-Thumbs.db
+*.pem
 
-# Environment
-.env
-.env.local
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# Package locks (optional - some prefer to include them)
-package-lock.json
-frontend/package-lock.json
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# sqlite database
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# runtime data files
+data/users.json
+data/boards/*.json
