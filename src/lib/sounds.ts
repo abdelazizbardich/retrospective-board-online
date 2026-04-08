@@ -150,6 +150,40 @@ export function sfxJoinRequest() {
   });
 }
 
+/** Swoosh — chat message sent */
+export function sfxChatSend() {
+  play((ac) => {
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(700, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(1100, ac.currentTime + 0.1);
+    g.gain.setValueAtTime(0.12, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.12);
+    o.connect(g).connect(ac.destination);
+    o.start();
+    o.stop(ac.currentTime + 0.12);
+  });
+}
+
+/** Gentle ding — chat message received */
+export function sfxChatReceive() {
+  play((ac) => {
+    [880, 1100].forEach((freq, i) => {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = "sine";
+      const t = ac.currentTime + i * 0.08;
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.1, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+      o.connect(g).connect(ac.destination);
+      o.start(t);
+      o.stop(t + 0.2);
+    });
+  });
+}
+
 /** Friendly chime — someone joined the board */
 export function sfxJoin() {
   play((ac) => {

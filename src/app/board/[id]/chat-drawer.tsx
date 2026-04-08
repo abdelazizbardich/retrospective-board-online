@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useBoardContext } from "@/lib/board-context";
 import { X, Send, Users, Lock, Hash, ThumbsUp } from "lucide-react";
+import { sfxChatSend, sfxChatReceive } from "@/lib/sounds";
 
 const STRIPE_COLORS: Record<string, string> = {
   green: "bg-green-400 dark:bg-green-500",
@@ -155,14 +156,21 @@ export function ChatDrawer() {
     return allCards.filter((c) => c.text.toLowerCase().includes(q));
   }, [allCards, cardFilter]);
 
-  // Auto-scroll on new messages
+  // Auto-scroll on new messages + play receive sound
   useEffect(() => {
-    const count = (board?.messages || []).length;
-    if (count > prevMsgCountRef.current && chatOpen) {
-      endRef.current?.scrollIntoView({ behavior: "smooth" });
+    const msgs = board?.messages || [];
+    const count = msgs.length;
+    if (count > prevMsgCountRef.current) {
+      if (chatOpen) {
+        endRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+      const lastMsg = msgs[count - 1];
+      if (lastMsg && lastMsg.authorId !== "system" && lastMsg.authorId !== participant?.id) {
+        sfxChatReceive();
+      }
     }
     prevMsgCountRef.current = count;
-  }, [board?.messages?.length, chatOpen]);
+  }, [board?.messages?.length, chatOpen, participant?.id]);
 
   // Focus input when opened
   useEffect(() => {
@@ -185,6 +193,7 @@ export function ChatDrawer() {
     const trimmed = text.trim();
     if (!trimmed) return;
     setText("");
+    sfxChatSend();
     await sendMessage(trimmed, dmTarget?.id, dmTarget?.name);
   };
 
