@@ -6,12 +6,14 @@ import { JoinForm } from "./join-form";
 import { BoardHeader } from "./board-header";
 import { BoardColumn } from "./board-column";
 import { AddColumnButton } from "./add-column-button";
+import { ChatDrawer } from "./chat-drawer";
 import { FluentEmoji } from "@/lib/fluent-emoji";
-import { AdSlot } from "@/app/components/ad-slot";
 
 export function BoardView() {
-  const { board, participant, loading, error, kicked, newJoinName } = useBoardContext();
+  const { board, participant, loading, error, kicked, roomClosed, newJoinName, leftName } = useBoardContext();
   const [activeColIdx, setActiveColIdx] = useState(0);
+  const isDone = board?.phase === "done";
+  const isHost = participant?.id === board?.hostId;
 
   if (loading) {
     return (
@@ -63,6 +65,26 @@ export function BoardView() {
     );
   }
 
+  if (roomClosed) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center max-w-sm">
+          <div className="mx-auto mb-4 text-5xl">🔒</div>
+          <h2 className="text-2xl font-bold">Session ended</h2>
+          <p className="mt-2 text-muted-foreground">
+            The host has closed the retrospective session.
+          </p>
+          <a
+            href="/"
+            className="mt-6 inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            Go Home
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   if (!participant) {
     return <JoinForm boardName={board.name} />;
   }
@@ -97,6 +119,21 @@ export function BoardView() {
         </div>
       )}
 
+      {/* Left toast */}
+      {leftName && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in-up">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 shadow-lg">
+            <span className="flex size-8 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/40 text-sm">
+              🚪
+            </span>
+            <div>
+              <p className="text-sm font-semibold">{leftName} left</p>
+              <p className="text-xs text-muted-foreground">Left the session</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile column tab bar */}
       <div className="md:hidden flex overflow-x-auto gap-2 px-3 pt-3 pb-2 border-b border-border/40 bg-background/95 backdrop-blur-sm shrink-0">
         {board.columns.map((col, idx) => (
@@ -119,38 +156,31 @@ export function BoardView() {
       {/* Mobile: single column view */}
       <main className="md:hidden flex flex-1 flex-col p-3">
         {board.columns[safeIdx] && (
-          <BoardColumn column={board.columns[safeIdx]} />
+          <BoardColumn column={board.columns[safeIdx]} index={safeIdx} total={board.columns.length} />
         )}
       </main>
 
-      {/* Desktop: columns + side ads */}
+      {/* Desktop: columns */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        {/* Left ad */}
-        <aside className="hidden lg:flex w-[176px] shrink-0 items-start justify-center pt-6 pl-2">
-          <AdSlot format="skyscraper" side="left" dismissible />
-        </aside>
-
-        {/* Board columns */}
         <main className="flex flex-1 gap-4 overflow-x-auto p-4">
           {board.columns.map((column, idx) => (
             <div
               key={column.id}
-              className="animate-slide-in-right flex min-w-0 flex-1"
+              className="animate-slide-in-right flex min-w-0 flex-1 relative hover:z-50"
               style={{ animationDelay: `${idx * 80}ms` }}
             >
-              <BoardColumn column={column} />
+              <BoardColumn column={column} index={idx} total={board.columns.length} />
             </div>
           ))}
+          {!isDone && isHost && (
           <div className="animate-fade-in-scale" style={{ animationDelay: `${board.columns.length * 80}ms` }}>
             <AddColumnButton />
           </div>
+          )}
         </main>
-
-        {/* Right ad */}
-        <aside className="hidden lg:flex w-[176px] shrink-0 items-start justify-center pt-6 pr-2">
-          <AdSlot format="skyscraper" side="right" dismissible />
-        </aside>
       </div>
+
+      <ChatDrawer />
     </div>
   );
 }

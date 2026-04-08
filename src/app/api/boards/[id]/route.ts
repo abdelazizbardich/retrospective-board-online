@@ -3,7 +3,7 @@ import { getBoard, updateBoard } from "@/lib/board-store";
 import { nanoid } from "nanoid";
 import type { BoardPhase } from "@/lib/types";
 
-const VALID_PHASES: BoardPhase[] = ["writing", "grouping", "voting", "discussing", "actions"];
+const VALID_PHASES: BoardPhase[] = ["writing", "grouping", "voting", "discussing", "done"];
 
 export async function GET(
   _request: NextRequest,
@@ -107,6 +107,14 @@ export async function PATCH(
         return NextResponse.json({ error: "participantId required" }, { status: 400 });
       }
 
+      // Check if this participant already voted on this card
+      const targetCard = board.columns
+        .find((c) => c.id === columnId)
+        ?.cards.find((c) => c.id === cardId);
+      if (targetCard?.votes.includes(participantId)) {
+        return NextResponse.json({ error: "Already voted on this card" }, { status: 400 });
+      }
+
       // Count total votes by this participant
       const totalVotes = board.columns
         .flatMap((c) => c.cards)
@@ -119,6 +127,12 @@ export async function PATCH(
           { status: 400 }
         );
       }
+
+      const voter = board.participants.find((p) => p.id === participantId);
+      const votedCard = board.columns
+        .find((c) => c.id === columnId)
+        ?.cards.find((c) => c.id === cardId);
+      const cardPreview = votedCard ? votedCard.text.slice(0, 40) + (votedCard.text.length > 40 ? "…" : "") : "a card";
 
       const updated = await updateBoard(id, (b) => ({
         ...b,
@@ -134,6 +148,13 @@ export async function PATCH(
               }
             : col
         ),
+        messages: [...(b.messages || []), {
+          id: nanoid(8),
+          authorId: "system",
+          authorName: "System",
+          text: `🗳️ ${voter?.name || "Someone"} voted on "${cardPreview}"`,
+          createdAt: Date.now(),
+        }],
       }));
       return NextResponse.json(updated);
     }
@@ -181,18 +202,92 @@ export async function PATCH(
       if (participantName.length > 50) {
         return NextResponse.json({ error: "Name too long" }, { status: 400 });
       }
+
+      const trimmedName = participantName.trim();
+
+      // Check if a participant with the same name previously left — allow them to rejoin
+      const returning = board.participants.find(
+        (p) => p.left && p.name.toLowerCase() === trimmedName.toLowerCase()
+      );
+      if (returning) {
+        const updated = await updateBoard(id, (b) => ({
+          ...b,
+          participants: b.participants.map((p) =>
+            p.id === returning.id ? { ...p, left: false } : p
+          ),
+        }));
+        const reactivated = { ...returning, left: false };
+        return NextResponse.json({ board: updated, participant: reactivated });
+      }
+
+      // First user auto-joins as host
+      if (!board.hostId) {
+        const participant = {
+          id: nanoid(8),
+          name: trimmedName,
+          joinedAt: Date.now(),
+          anonymous: false,
+        };
+        const updated = await updateBoard(id, (b) => ({
+          ...b,
+          participants: [...b.participants, participant],
+          hostId: participant.id,
+        }));
+        return NextResponse.json({ board: updated, participant });
+      }
+
+      // Subsequent users go into pending approval
+      const requestId = nanoid(8);
+      const updated = await updateBoard(id, (b) => ({
+        ...b,
+        pendingJoinRequests: [...(b.pendingJoinRequests || []), {
+          id: requestId,
+          name: trimmedName,
+          requestedAt: Date.now(),
+        }],
+      }));
+      return NextResponse.json({ board: updated, pending: true, requestId });
+    }
+
+    case "approve-join": {
+      const { requestId, requesterId } = body;
+      if (!requestId) {
+        return NextResponse.json({ error: "requestId required" }, { status: 400 });
+      }
+      if (board.hostId !== requesterId) {
+        return NextResponse.json({ error: "Only the host can approve join requests" }, { status: 403 });
+      }
+      const request = (board.pendingJoinRequests || []).find((r) => r.id === requestId);
+      if (!request) {
+        return NextResponse.json({ error: "Join request not found" }, { status: 404 });
+      }
       const participant = {
-        id: nanoid(8),
-        name: participantName.trim(),
+        id: request.id,
+        name: request.name,
         joinedAt: Date.now(),
         anonymous: false,
       };
       const updated = await updateBoard(id, (b) => ({
         ...b,
         participants: [...b.participants, participant],
-        hostId: b.hostId ?? participant.id,
+        pendingJoinRequests: (b.pendingJoinRequests || []).filter((r) => r.id !== requestId),
       }));
-      return NextResponse.json({ board: updated, participant });
+      return NextResponse.json(updated);
+    }
+
+    case "reject-join": {
+      const { requestId, requesterId } = body;
+      if (!requestId) {
+        return NextResponse.json({ error: "requestId required" }, { status: 400 });
+      }
+      if (board.hostId !== requesterId) {
+        return NextResponse.json({ error: "Only the host can reject join requests" }, { status: 403 });
+      }
+      const updated = await updateBoard(id, (b) => ({
+        ...b,
+        pendingJoinRequests: (b.pendingJoinRequests || []).filter((r) => r.id !== requestId),
+      }));
+      return NextResponse.json(updated);
     }
 
     case "set-timer": {
@@ -379,6 +474,117 @@ export async function PATCH(
         participants: b.participants.map((p) =>
           p.id === participantId ? { ...p, anonymous: !p.anonymous } : p
         ),
+      }));
+      return NextResponse.json(updated);
+    }
+
+    case "assign-host": {
+      const { newHostId, requesterId } = body;
+      if (!newHostId || !requesterId) {
+        return NextResponse.json({ error: "newHostId and requesterId required" }, { status: 400 });
+      }
+      if (board.hostId !== requesterId) {
+        return NextResponse.json({ error: "Only the host can transfer the host role" }, { status: 403 });
+      }
+      if (!board.participants.some((p) => p.id === newHostId)) {
+        return NextResponse.json({ error: "Target participant not found" }, { status: 404 });
+      }
+      const updated = await updateBoard(id, (b) => ({ ...b, hostId: newHostId }));
+      return NextResponse.json(updated);
+    }
+
+    case "move-column": {
+      const { columnId, direction } = body;
+      if (!columnId || (direction !== "left" && direction !== "right")) {
+        return NextResponse.json({ error: "columnId and direction (left|right) required" }, { status: 400 });
+      }
+      const colIdx = board.columns.findIndex((c) => c.id === columnId);
+      if (colIdx === -1) {
+        return NextResponse.json({ error: "Column not found" }, { status: 404 });
+      }
+      const targetIdx = direction === "left" ? colIdx - 1 : colIdx + 1;
+      if (targetIdx < 0 || targetIdx >= board.columns.length) {
+        return NextResponse.json(board);
+      }
+      const updated = await updateBoard(id, (b) => {
+        const cols = [...b.columns];
+        [cols[colIdx], cols[targetIdx]] = [cols[targetIdx], cols[colIdx]];
+        return { ...b, columns: cols };
+      });
+      return NextResponse.json(updated);
+    }
+
+    case "reorder-column": {
+      const { columnId, toIndex } = body;
+      if (!columnId || typeof toIndex !== "number") {
+        return NextResponse.json({ error: "columnId and toIndex required" }, { status: 400 });
+      }
+      const fromIdx = board.columns.findIndex((c) => c.id === columnId);
+      if (fromIdx === -1) {
+        return NextResponse.json({ error: "Column not found" }, { status: 404 });
+      }
+      const clampedTo = Math.max(0, Math.min(toIndex, board.columns.length - 1));
+      if (fromIdx === clampedTo) {
+        return NextResponse.json(board);
+      }
+      const updated = await updateBoard(id, (b) => {
+        const cols = [...b.columns];
+        const [moved] = cols.splice(fromIdx, 1);
+        cols.splice(clampedTo, 0, moved);
+        return { ...b, columns: cols };
+      });
+      return NextResponse.json(updated);
+    }
+
+    case "leave": {
+      const { participantId } = body;
+      if (!participantId) {
+        return NextResponse.json({ error: "participantId required" }, { status: 400 });
+      }
+      if (!board.participants.some((p) => p.id === participantId)) {
+        return NextResponse.json(board); // already gone — no-op
+      }
+      // Host leaving → close the room for everyone
+      if (board.hostId === participantId) {
+        const updated = await updateBoard(id, (b) => ({
+          ...b,
+          participants: [],
+          closed: true,
+        }));
+        return NextResponse.json(updated);
+      }
+      // Regular participant leaving — mark as left instead of removing
+      const updated = await updateBoard(id, (b) => ({
+        ...b,
+        participants: b.participants.map((p) =>
+          p.id === participantId ? { ...p, left: true } : p
+        ),
+      }));
+      return NextResponse.json(updated);
+    }
+
+    case "send-message": {
+      const { participantId, participantName, text, toId, toName } = body;
+      if (!participantId || !participantName) {
+        return NextResponse.json({ error: "participantId and participantName required" }, { status: 400 });
+      }
+      if (!text || typeof text !== "string" || text.trim().length === 0) {
+        return NextResponse.json({ error: "Message text required" }, { status: 400 });
+      }
+      if (text.length > 500) {
+        return NextResponse.json({ error: "Message too long" }, { status: 400 });
+      }
+      const message = {
+        id: nanoid(8),
+        authorId: participantId,
+        authorName: participantName,
+        text: text.trim(),
+        ...(toId && toName ? { toId, toName } : {}),
+        createdAt: Date.now(),
+      };
+      const updated = await updateBoard(id, (b) => ({
+        ...b,
+        messages: [...(b.messages || []), message],
       }));
       return NextResponse.json(updated);
     }

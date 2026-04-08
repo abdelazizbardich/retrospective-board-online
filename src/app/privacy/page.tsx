@@ -23,7 +23,7 @@ export default function PrivacyPage() {
             href="/create"
             className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
           >
-            Get Started Free
+            Get Started
           </Link>
         </nav>
       </header>
@@ -60,9 +60,8 @@ export default function PrivacyPage() {
           <section>
             <h2>3. Data Storage & Security</h2>
             <p>
-              Board data is stored in a managed PostgreSQL database hosted on Supabase. Data is
-              encrypted at rest and in transit (TLS). We apply industry-standard security practices
-              to protect your information.
+              Board data is stored in a local SQLite database. We apply industry-standard security
+              practices to protect your information.
             </p>
           </section>
 
@@ -70,7 +69,7 @@ export default function PrivacyPage() {
             <h2>4. Data Retention</h2>
             <p>
               Boards that have not been accessed for more than 90 days may be deleted automatically
-              to keep the service lean and secure. Blog posts and pages are retained indefinitely
+              to keep the service lean and secure. Pages are retained indefinitely
               until deleted by an administrator.
             </p>
           </section>

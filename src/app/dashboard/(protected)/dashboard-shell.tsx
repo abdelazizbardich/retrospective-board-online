@@ -2,14 +2,12 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutGrid, BarChart3, Megaphone, LogOut, LayoutDashboard, BookOpen, FileText } from "lucide-react";
+import { LayoutGrid, BarChart3, LogOut, LayoutDashboard, FileText } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/boards", label: "Boards", icon: BarChart3, exact: false },
-  { href: "/dashboard/blog", label: "Blog", icon: BookOpen, exact: false },
   { href: "/dashboard/pages", label: "Pages", icon: FileText, exact: false },
-  { href: "/dashboard/ads", label: "Ads", icon: Megaphone, exact: false },
 ];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {

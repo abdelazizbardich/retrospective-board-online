@@ -83,6 +83,22 @@ export function sfxTimerDone() {
   });
 }
 
+/** Soft descending tone — participant left */
+export function sfxLeave() {
+  play((ac) => {
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(500, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(250, ac.currentTime + 0.25);
+    g.gain.setValueAtTime(0.1, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.3);
+    o.connect(g).connect(ac.destination);
+    o.start();
+    o.stop(ac.currentTime + 0.3);
+  });
+}
+
 /** Tick — last seconds countdown */
 export function sfxTick() {
   play((ac) => {
@@ -111,6 +127,26 @@ export function sfxDrop() {
     o.connect(g).connect(ac.destination);
     o.start();
     o.stop(ac.currentTime + 0.15);
+  });
+}
+
+/** Attention knock — someone is requesting to join */
+export function sfxJoinRequest() {
+  play((ac) => {
+    [880, 0, 880].forEach((freq, i) => {
+      if (freq === 0) return;
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = "sine";
+      const t = ac.currentTime + i * 0.15;
+      o.frequency.setValueAtTime(freq, t);
+      o.frequency.exponentialRampToValueAtTime(660, t + 0.12);
+      g.gain.setValueAtTime(0.2, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      o.connect(g).connect(ac.destination);
+      o.start(t);
+      o.stop(t + 0.18);
+    });
   });
 }
 

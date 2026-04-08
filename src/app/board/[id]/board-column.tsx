@@ -14,6 +14,8 @@ import {
   Send,
   Eye,
   EyeOff,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { FluentEmoji } from "@/lib/fluent-emoji";
 import EmojiPicker, { type EmojiClickData, Theme } from "emoji-picker-react";
@@ -79,8 +81,11 @@ const AVAILABLE_COLORS = [
   { key: "purple", label: "Purple" },
 ];
 
-export function BoardColumn({ column }: { column: Column }) {
-  const { board, participant, addCard, editColumn, deleteColumn, moveCard } = useBoardContext();
+export function BoardColumn({ column, index, total }: { column: Column; index: number; total: number }) {
+  const { board, participant, addCard, editColumn, deleteColumn, moveCard, moveColumn } = useBoardContext();
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+  const isHost = !!participant && participant.id === board?.hostId;
   const [dragOver, setDragOver] = useState(false);
   const [newCardText, setNewCardText] = useState("");
   const [showInput, setShowInput] = useState(false);
@@ -97,10 +102,11 @@ export function BoardColumn({ column }: { column: Column }) {
 
   const colors = COLOR_MAP[column.color] || COLOR_MAP.blue;
   const isWritePhase = board?.phase === "writing";
+  const isDone = board?.phase === "done";
 
-  // Sort cards by votes in voting/discussing/actions phase
+  // Sort cards by votes in voting/discussing/done phase
   const sortedCards =
-    board?.phase === "voting" || board?.phase === "discussing" || board?.phase === "actions"
+    board?.phase === "voting" || board?.phase === "discussing" || board?.phase === "done"
       ? [...column.cards].sort((a, b) => b.votes.length - a.votes.length)
       : column.cards;
 
@@ -155,15 +161,15 @@ export function BoardColumn({ column }: { column: Column }) {
 
   return (
     <div
-      className={`flex min-w-0 md:min-w-75 w-full flex-1 flex-col rounded-xl overflow-hidden bg-background border ${colors.border} shadow-md transition-all animate-fade-in-scale ${
+      className={`flex min-w-75 w-full flex-1 flex-col rounded-xl overflow-hidden bg-background border ${colors.border} shadow-md transition-all animate-fade-in-scale relative hover:z-50 ${
         dragOver ? "ring-2 ring-primary/40 shadow-lg shadow-primary/10 scale-[1.01]" : "hover:shadow-lg"
       }`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      onDragOver={isDone || !isHost ? undefined : handleDragOver}
+      onDragLeave={isDone || !isHost ? undefined : handleDragLeave}
+      onDrop={isDone || !isHost ? undefined : handleDrop}
     >
       {/* Column header bar */}
-      {editingColumn ? (
+      {editingColumn && !isDone && isHost ? (
         <div className={`px-4 pt-3 pb-3 ${colors.bg}`}>
         <div className="space-y-3 rounded-xl border border-border bg-background/80 p-3">
           <div className="flex gap-2">
@@ -267,7 +273,26 @@ export function BoardColumn({ column }: { column: Column }) {
             <span className="tracking-tight">{column.title}</span>
           </h2>
           <div className="flex items-center gap-1.5">
+            {!isDone && isHost && (
             <div className="flex gap-0.5 opacity-0 group-hover/header:opacity-100 transition-opacity">
+              {!isFirst && (
+                <button
+                  onClick={() => moveColumn(column.id, "left")}
+                  className="flex size-6 items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                  title="Move column left"
+                >
+                  <ChevronLeft className="size-3 text-muted-foreground" />
+                </button>
+              )}
+              {!isLast && (
+                <button
+                  onClick={() => moveColumn(column.id, "right")}
+                  className="flex size-6 items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                  title="Move column right"
+                >
+                  <ChevronRight className="size-3 text-muted-foreground" />
+                </button>
+              )}
               <button
                 onClick={() => {
                   setColTitle(column.title);
@@ -315,6 +340,7 @@ export function BoardColumn({ column }: { column: Column }) {
                 </button>
               )}
             </div>
+            )}
             <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold tabular-nums ${colors.countBg} ${colors.title}`}>
               {column.cards.length}
             </span>
@@ -432,10 +458,13 @@ function CardItem({
   const myReactions = Object.entries(reactions).filter(([, ids]) => ids.includes(participant?.id ?? "")).map(([e]) => e);
   const activeReactions = Object.entries(reactions).filter(([, ids]) => ids.length > 0);
   const isVotingPhase = board?.phase === "voting";
+  const isDone = board?.phase === "done";
+  const isWritePhase = board?.phase === "writing";
+  const hasVoted = card.votes.includes(participant?.id ?? "");
   const canVote = isVotingPhase && participant;
   const isMyCard = card.authorId === participant?.id;
   const isHost = !!participant && participant.id === board?.hostId;
-  const canManageCard = isMyCard || isHost;
+  const canManageCard = !isDone && (isHost || (isMyCard && isWritePhase));
 
   const handleSave = async () => {
     if (!editText.trim()) return;
@@ -456,7 +485,7 @@ function CardItem({
   };
 
   const handleVote = async () => {
-    if (!canVote) return;
+    if (!canVote || hasVoted) return;
     try {
       await vote(columnId, card.id);
       sfxPop();
@@ -530,6 +559,7 @@ function CardItem({
 
   return (
     <div
+      id={`card-${card.id}`}
       className={`group relative flex rounded-xl ${colors.cardBg} shadow-sm transition-all ${canManageCard ? "cursor-grab active:cursor-grabbing" : "cursor-default"} hover:shadow-md hover:-translate-y-0.5 border border-border/40 hover:border-border/80 animate-fade-in-up overflow-visible ${
         dragging ? "opacity-40 scale-95" : ""
       }`}
@@ -543,7 +573,7 @@ function CardItem({
 
       <div className="flex-1 px-3 pt-3 pb-4 min-w-0">
       {/* Floating reaction bar — appears on card hover */}
-      {participant && (
+      {participant && !isDone && (
         <div className="pointer-events-none absolute -bottom-5 inset-x-0 flex justify-center z-20 opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out group-hover:pointer-events-auto">
           <div className="flex gap-0.5 rounded-full bg-white dark:bg-zinc-800 border border-border/60 shadow-2xl px-2 py-1.5">
             {REACTION_EMOJIS.map((emoji) => (
@@ -569,18 +599,18 @@ function CardItem({
       {activeReactions.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {activeReactions.map(([emoji, ids]) => (
-            <button
+            <span
               key={emoji}
-              onClick={() => participant && reactToCard(columnId, card.id, emoji)}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition-all hover:scale-105 ${
-                myReactions.includes(emoji)
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium ${
+                !isDone && myReactions.includes(emoji)
                   ? "border-primary/40 bg-primary/10 text-primary font-semibold"
-                  : "border-border/60 bg-muted/40 text-foreground hover:border-primary/30"
-              }`}
+                  : "border-border/60 bg-muted/40 text-foreground"
+              } ${!isDone ? "cursor-pointer transition-all hover:scale-105" : ""}`}
+              onClick={!isDone && participant ? () => reactToCard(columnId, card.id, emoji) : undefined}
             >
               <FluentEmoji emoji={emoji} size="1.25rem" />
               <span>{ids.length}</span>
-            </button>
+            </span>
           ))}
         </div>
       )}
@@ -623,24 +653,26 @@ function CardItem({
       {/* Vote controls — only in voting phase */}
       {canVote && (
         <div className="mt-3 flex items-center gap-2">
-          <button
-            onClick={handleVote}
-            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
-              voteAnim
-                ? "animate-bounce-vote border-primary/60 bg-primary/10 text-primary"
-                : "border-border text-muted-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5"
-            }`}
-          >
-            <ThumbsUp className="size-3" />
-            {card.votes.length}
-          </button>
-          {myVotes > 0 && (
+          {hasVoted ? (
             <button
               onClick={handleUnvote}
-              className="inline-flex items-center gap-1 rounded-xl border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-primary/50 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-all"
               title="Remove my vote"
             >
-              <X className="size-3" /> Undo
+              <ThumbsUp className="size-3 fill-primary" />
+              {card.votes.length}
+            </button>
+          ) : (
+            <button
+              onClick={handleVote}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
+                voteAnim
+                  ? "animate-bounce-vote border-primary/60 bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5"
+              }`}
+            >
+              <ThumbsUp className="size-3" />
+              {card.votes.length}
             </button>
           )}
         </div>

@@ -47,13 +47,12 @@ export default async function PublicPage({
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <Link href="/#features" className="hover:text-foreground transition-colors">Features</Link>
-            <Link href="/blog" className="hover:text-foreground transition-colors">Blog</Link>
           </div>
           <Link
             href="/create"
             className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
           >
-            Get Started Free
+            Get Started
           </Link>
         </nav>
       </header>

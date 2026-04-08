@@ -1,11 +1,9 @@
 import { getAllBoards } from "@/lib/board-store";
-import { getAdSettings } from "@/lib/ad-settings";
-import { LayoutGrid, Users, CreditCard, Megaphone, TrendingUp } from "lucide-react";
+import { LayoutGrid, Users, CreditCard, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 export default async function DashboardPage() {
   const boards = await getAllBoards();
-  const adSettings = await getAdSettings();
 
   const totalParticipants = boards.reduce((s, b) => s + b.participants.length, 0);
   const totalCards = boards.reduce(
@@ -47,31 +45,6 @@ export default async function DashboardPage() {
             <p className="text-3xl font-bold">{value}</p>
           </Link>
         ))}
-      </div>
-
-      {/* Ad status banner */}
-      <div className={`flex items-center justify-between gap-4 rounded-xl border p-4 ${
-        adSettings.adsEnabled
-          ? "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20"
-          : "border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950/20"
-      }`}>
-        <div className="flex items-center gap-3">
-          <Megaphone className={`size-5 ${adSettings.adsEnabled ? "text-green-600" : "text-yellow-600"}`} />
-          <div>
-            <p className="text-sm font-semibold">
-              Advertisements are {adSettings.adsEnabled ? "enabled" : "disabled"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Publisher ID: <code className="font-mono">{adSettings.adClientId}</code>
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/dashboard/ads"
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
-        >
-          Configure →
-        </Link>
       </div>
 
       {/* Recent boards */}

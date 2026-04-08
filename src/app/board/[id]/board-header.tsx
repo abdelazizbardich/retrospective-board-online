@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useBoardContext } from "@/lib/board-context";
 import type { BoardPhase } from "@/lib/types";
 import { sfxTick, sfxTimerDone, sfxPhaseChange } from "@/lib/sounds";
@@ -18,8 +19,10 @@ import {
   Check,
   X,
   Download,
-  Eye,
-  EyeOff,
+  LogOut,
+  UserPlus,
+  UserX,
+  MessageCircle,
 } from "lucide-react";
 
 const PHASES: { key: BoardPhase; label: string; emoji: string; description: string }[] = [
@@ -27,12 +30,13 @@ const PHASES: { key: BoardPhase; label: string; emoji: string; description: stri
   { key: "grouping", label: "Organize", emoji: "🧩", description: "Drag similar cards together" },
   { key: "voting", label: "Vote", emoji: "💯", description: "Vote on the most important items" },
   { key: "discussing", label: "Discuss", emoji: "💬", description: "Talk through the top-voted items" },
-  { key: "actions", label: "Actions", emoji: "⚡", description: "Assign owners and deadlines" },
+  { key: "done", label: "Done", emoji: "✅", description: "Summary of the retrospective" },
 ];
 
 export function BoardHeader() {
-  const { board, participant, setPhase, setTimer, totalVotesByMe, kickParticipant, toggleAnonymous } =
+  const { board, participant, setPhase, setTimer, totalVotesByMe, kickParticipant, leaveBoard, assignHost, approveJoin, rejectJoin, chatOpen, setChatOpen, unreadCount } =
     useBoardContext();
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -41,6 +45,8 @@ export function BoardHeader() {
   const [timerInputMin, setTimerInputMin] = useState("");
   const [timerInputSec, setTimerInputSec] = useState("");
   const timerInputRef = useRef<HTMLInputElement>(null);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [assigningHost, setAssigningHost] = useState(false);
 
   // Sync local timer with server
   useEffect(() => {
@@ -124,6 +130,31 @@ export function BoardHeader() {
   const prevPhase = PHASES[currentPhaseIdx - 1];
   const isHost = participant?.id === board.hostId;
 
+  const otherParticipants = board?.participants.filter((p) => p.id !== participant?.id && !p.left) ?? [];
+
+  const handleLeave = () => {
+    if (isHost) {
+      setAssigningHost(false);
+      setShowLeaveModal(true);
+    } else {
+      leaveBoard().then(() => router.push("/"));
+    }
+  };
+
+  const handleEndSession = async () => {
+    setShowLeaveModal(false);
+    await leaveBoard();
+    router.push("/");
+  };
+
+  const handleTransferHost = async (newHostId: string) => {
+    setShowLeaveModal(false);
+    setAssigningHost(false);
+    await assignHost(newHostId);
+    await leaveBoard();
+    router.push("/");
+  };
+
   const isRunning = board.timer.running;
   const pct = board.timer.total > 0 ? (localRemaining / board.timer.total) * 100 : 100;
   const isUrgent = isRunning && localRemaining <= 30 && localRemaining > 10;
@@ -131,6 +162,7 @@ export function BoardHeader() {
   const isExpired = isRunning && localRemaining <= 0;
 
   return (
+    <>
     <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-md">
       {/* Countdown progress bar at the very top */}
       {isRunning && (
@@ -187,24 +219,24 @@ export function BoardHeader() {
             </form>
           ) : (
             <button
-              onClick={startEditingTimer}
-              disabled={board.timer.running}
-              title={board.timer.running ? "Pause to edit" : "Click to change duration"}
+              onClick={isHost ? startEditingTimer : undefined}
+              disabled={board.timer.running || !isHost}
+              title={!isHost ? "Only the host can edit the timer" : board.timer.running ? "Pause to edit" : "Click to change duration"}
               className={`font-mono text-sm font-semibold tabular-nums transition-colors ${
                 isCritical
                   ? "text-red-600 animate-timer-pulse text-base"
                   : isUrgent
                   ? "text-red-500"
                   : ""
-              } ${!isRunning ? "hover:text-primary cursor-pointer" : ""}`}
+              } ${!isRunning && isHost ? "hover:text-primary cursor-pointer" : ""}`}
             >
               {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
             </button>
           )}
           <button
-            onClick={toggleTimer}
-            className="rounded-md p-1 hover:bg-muted transition-colors"
-            title={board.timer.running ? "Pause" : "Start"}
+            onClick={isHost ? toggleTimer : undefined}
+            className={`rounded-md p-1 transition-colors ${isHost ? 'hover:bg-muted' : 'opacity-50 cursor-default'}`}
+            title={isHost ? (board.timer.running ? "Pause" : "Start") : "Only the host can control the timer"}
           >
             {board.timer.running ? (
               <Pause className="size-3.5" />
@@ -213,9 +245,9 @@ export function BoardHeader() {
             )}
           </button>
           <button
-            onClick={resetTimer}
-            className="rounded-md p-1 hover:bg-muted transition-colors"
-            title="Reset timer"
+            onClick={isHost ? resetTimer : undefined}
+            className={`rounded-md p-1 transition-colors ${isHost ? 'hover:bg-muted' : 'opacity-50 cursor-default'}`}
+            title={isHost ? "Reset timer" : "Only the host can control the timer"}
           >
             <RotateCcw className="size-3.5" />
           </button>
@@ -236,7 +268,12 @@ export function BoardHeader() {
             className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl border border-border bg-background/60 px-3 py-1.5"
           >
             <Users className="size-4" />
-            <span className="font-medium">{board.participants.length}</span>
+            <span className="font-medium">{board.participants.filter((p) => !p.left).length}</span>
+            {isHost && (board.pendingJoinRequests || []).length > 0 && (
+              <span className="flex size-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white animate-pulse">
+                {board.pendingJoinRequests.length}
+              </span>
+            )}
           </button>
           {showParticipants && (
             <>
@@ -246,13 +283,13 @@ export function BoardHeader() {
               />
               <div className="absolute right-0 top-full mt-2 z-50 w-72 rounded-xl border border-border bg-background shadow-lg animate-fade-in-scale">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-                  <span className="text-xs font-semibold text-muted-foreground">Participants ({board.participants.length})</span>
+                  <span className="text-xs font-semibold text-muted-foreground">Participants ({board.participants.filter((p) => !p.left).length})</span>
                   <button onClick={() => setShowParticipants(false)} className="rounded p-0.5 hover:bg-muted">
                     <X className="size-3.5 text-muted-foreground" />
                   </button>
                 </div>
                 <ul className="max-h-60 overflow-y-auto py-1">
-                  {board.participants.map((p) => {
+                  {board.participants.filter((p) => !p.left).map((p) => {
                     const isMe = p.id === participant?.id;
                     return (
                       <li key={p.id} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 transition-colors">
@@ -268,20 +305,6 @@ export function BoardHeader() {
                             <span className="ml-1 text-xs text-muted-foreground">(you)</span>
                           )}
                         </span>
-                        {isMe && (
-                          <button
-                            onClick={toggleAnonymous}
-                            className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium transition-colors ${
-                              p.anonymous
-                                ? "border-primary/50 bg-primary/10 text-primary"
-                                : "border-border text-muted-foreground hover:text-foreground"
-                            }`}
-                            title={p.anonymous ? "Click to show your name on cards" : "Click to hide your name on cards"}
-                          >
-                            {p.anonymous ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
-                            {p.anonymous ? "Anon" : "Visible"}
-                          </button>
-                        )}
                         {isHost && !isMe && (
                           <button
                             onClick={() => kickParticipant(p.id)}
@@ -295,10 +318,65 @@ export function BoardHeader() {
                     );
                   })}
                 </ul>
+                {/* Pending join requests — visible to host only */}
+                {isHost && (board.pendingJoinRequests || []).length > 0 && (
+                  <>
+                    <div className="flex items-center justify-between px-3 py-2 border-t border-border">
+                      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                        Pending requests ({board.pendingJoinRequests.length})
+                      </span>
+                    </div>
+                    <ul className="max-h-40 overflow-y-auto py-1">
+                      {board.pendingJoinRequests.map((req) => (
+                        <li key={req.id} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 transition-colors">
+                          <span className="flex size-6 items-center justify-center rounded-full bg-amber-500/10 text-xs font-bold text-amber-600 dark:text-amber-400">
+                            {req.name.charAt(0).toUpperCase()}
+                          </span>
+                          <span className="flex-1 truncate text-sm text-muted-foreground">
+                            {req.name}
+                          </span>
+                          <button
+                            onClick={() => approveJoin(req.id)}
+                            className="rounded p-1 text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors"
+                            title={`Approve ${req.name}`}
+                          >
+                            <UserPlus className="size-3.5" />
+                          </button>
+                          <button
+                            onClick={() => rejectJoin(req.id)}
+                            className="rounded p-1 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                            title={`Reject ${req.name}`}
+                          >
+                            <UserX className="size-3.5" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </div>
             </>
           )}
         </div>
+
+        {/* Chat */}
+        <button
+          onClick={() => setChatOpen(!chatOpen)}
+          className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 sm:px-3 text-sm font-medium transition-all relative ${
+            chatOpen
+              ? "border-primary/50 bg-primary/10 text-primary"
+              : "border-border bg-background/60 hover:bg-muted"
+          }`}
+          title="Chat"
+        >
+          <MessageCircle className="size-3.5" />
+          <span className="hidden sm:inline">Chat</span>
+          {unreadCount > 0 && (
+            <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground animate-pulse">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
 
         {/* Share link */}
         <button
@@ -334,7 +412,17 @@ export function BoardHeader() {
           </button>
         )}
 
-
+        {/* Leave session */}
+        {participant && (
+          <button
+            onClick={handleLeave}
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-background/60 px-2.5 py-1.5 sm:px-3 text-sm font-medium text-muted-foreground hover:border-red-400/50 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+            title={isHost ? "Close session (you are the host)" : "Leave session"}
+          >
+            <LogOut className="size-3.5" />
+            <span className="hidden sm:inline">Leave</span>
+          </button>
+        )}
       </div>
       <div className="px-3 py-3 sm:px-6 sm:py-4">
         {/* Step indicators */}
@@ -345,9 +433,9 @@ export function BoardHeader() {
             return (
               <div key={phase.key} className="flex items-center flex-1 last:flex-none">
                 <button
-                  onClick={() => { sfxPhaseChange(); setPhase(phase.key); }}
+                  onClick={isHost ? () => { sfxPhaseChange(); setPhase(phase.key); } : undefined}
                   className={`flex items-center gap-1.5 sm:gap-2.5 rounded-xl px-1.5 sm:px-3 py-1.5 transition-all ${
-                    isActive ? "" : "hover:bg-muted"
+                    isActive ? "" : isHost ? "hover:bg-muted cursor-pointer" : "cursor-default"
                   }`}
                 >
                   <span
@@ -395,7 +483,7 @@ export function BoardHeader() {
             <p className="hidden sm:block text-xs text-muted-foreground">{currentPhase.description}</p>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
-            {prevPhase && (
+            {prevPhase && isHost && (
               <button
                 onClick={() => { sfxPhaseChange(); setPhase(prevPhase.key); }}
                 className="rounded-xl border border-border px-2.5 py-1.5 sm:px-4 sm:py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -403,7 +491,7 @@ export function BoardHeader() {
                 ← Back
               </button>
             )}
-            {nextPhase && (
+            {nextPhase && isHost && (
               <button
                 onClick={() => { sfxPhaseChange(); setPhase(nextPhase.key); }}
                 className="inline-flex items-center gap-1 sm:gap-1.5 rounded-xl bg-primary px-2.5 py-1.5 sm:px-4 sm:py-2.5 text-xs font-bold text-primary-foreground shadow-md hover:opacity-90 transition-opacity"
@@ -421,5 +509,83 @@ export function BoardHeader() {
         </div>
       </div>
     </header>
+
+      {/* Host-leave modal */}
+      {showLeaveModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowLeaveModal(false)}
+        >
+          <div
+            className="bg-background rounded-2xl border border-border shadow-xl w-full max-w-sm mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {!assigningHost ? (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-base font-semibold">You&apos;re the host</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    What would you like to do before leaving?
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {otherParticipants.length > 0 && (
+                    <button
+                      onClick={() => setAssigningHost(true)}
+                      className="flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors text-left"
+                    >
+                      <Users className="size-4 text-primary shrink-0" />
+                      <span>Assign a new host and leave</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={handleEndSession}
+                    className="flex items-center gap-2 rounded-xl border border-red-300 bg-background px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-left"
+                  >
+                    <LogOut className="size-4 shrink-0" />
+                    <span>End session for everyone</span>
+                  </button>
+                  <button
+                    onClick={() => setShowLeaveModal(false)}
+                    className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-base font-semibold">Choose a new host</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select a participant to take over as host:
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 max-h-48 overflow-y-auto mb-4">
+                  {otherParticipants.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleTransferHost(p.id)}
+                      className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted hover:border-primary/40 transition-colors text-left"
+                    >
+                      <span className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                        {p.name.charAt(0).toUpperCase()}
+                      </span>
+                      <span>{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setAssigningHost(false)}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  Back
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

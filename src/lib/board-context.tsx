@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import type { Board, BoardPhase, Participant } from "./types";
-import { sfxJoin } from "./sounds";
+import { sfxJoin, sfxLeave, sfxJoinRequest } from "./sounds";
 
 interface BoardContextValue {
   board: Board | null;
@@ -18,7 +18,14 @@ interface BoardContextValue {
   error: string | null;
   kicked: boolean;
   newJoinName: string | null;
+  leftName: string | null;
+  roomClosed: boolean;
+  pendingRequestId: string | null;
+  joinRejected: boolean;
+  leaveBoard: () => Promise<void>;
   joinBoard: (name: string) => Promise<void>;
+  approveJoin: (requestId: string) => Promise<void>;
+  rejectJoin: (requestId: string) => Promise<void>;
   addCard: (columnId: string, text: string, anonymous?: boolean) => Promise<void>;
   editCard: (columnId: string, cardId: string, text: string) => Promise<void>;
   deleteCard: (columnId: string, cardId: string) => Promise<void>;
@@ -30,9 +37,16 @@ interface BoardContextValue {
   editColumn: (columnId: string, opts: { title?: string; color?: string; emoji?: string }) => Promise<void>;
   deleteColumn: (columnId: string) => Promise<void>;
   moveCard: (cardId: string, fromColumnId: string, toColumnId: string) => Promise<void>;
+  moveColumn: (columnId: string, direction: "left" | "right") => Promise<void>;
+  reorderColumn: (columnId: string, toIndex: number) => Promise<void>;
   kickParticipant: (participantId: string) => Promise<void>;
   toggleAnonymous: () => Promise<void>;
   reactToCard: (columnId: string, cardId: string, emoji: string) => Promise<void>;
+  assignHost: (newHostId: string) => Promise<void>;
+  sendMessage: (text: string, toId?: string, toName?: string) => Promise<void>;
+  chatOpen: boolean;
+  setChatOpen: (open: boolean) => void;
+  unreadCount: number;
   totalVotesByMe: number;
 }
 
@@ -57,8 +71,19 @@ export function BoardProvider({
   const [error, setError] = useState<string | null>(null);
   const [kicked, setKicked] = useState(false);
   const [newJoinName, setNewJoinName] = useState<string | null>(null);
+  const [leftName, setLeftName] = useState<string | null>(null);
+  const [roomClosed, setRoomClosed] = useState(false);
+  const [pendingRequestId, setPendingRequestId] = useState<string | null>(null);
+  const [joinRejected, setJoinRejected] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const prevMessageCountRef = useRef(0);
+  const chatOpenRef = useRef(false);
   const prevParticipantIdsRef = useRef<Set<string> | null>(null);
+  const prevParticipantsRef = useRef<Participant[]>([]);
+  const prevPendingIdsRef = useRef<Set<string> | null>(null);
   const newJoinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const leftNameTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Fetch board
@@ -73,10 +98,11 @@ export function BoardProvider({
       }
       const data: Board = await res.json();
 
-      // Detect new participants joining
+      // Detect new participants joining (active only)
       if (prevParticipantIdsRef.current) {
         const prevIds = prevParticipantIdsRef.current;
-        const newPeople = data.participants.filter((p) => !prevIds.has(p.id));
+        const active = data.participants.filter((p) => !p.left);
+        const newPeople = active.filter((p) => !prevIds.has(p.id));
         if (newPeople.length > 0) {
           const name = newPeople[newPeople.length - 1].name;
           setNewJoinName(name);
@@ -84,8 +110,46 @@ export function BoardProvider({
           if (newJoinTimeoutRef.current) clearTimeout(newJoinTimeoutRef.current);
           newJoinTimeoutRef.current = setTimeout(() => setNewJoinName(null), 3000);
         }
+
+        // Detect participants who left (skip the current user — handled separately)
+        const stored = sessionStorage.getItem(`retro-participant-${boardId}`);
+        const myId = stored ? (() => { try { return JSON.parse(stored)?.id; } catch { return null; } })() : null;
+        const currentActiveIds = new Set(active.map((p) => p.id));
+        const leftPeople = prevParticipantsRef.current.filter(
+          (p) => !currentActiveIds.has(p.id) && p.id !== myId
+        );
+        if (leftPeople.length > 0) {
+          const name = leftPeople[leftPeople.length - 1].name;
+          setLeftName(name);
+          sfxLeave();
+          if (leftNameTimeoutRef.current) clearTimeout(leftNameTimeoutRef.current);
+          leftNameTimeoutRef.current = setTimeout(() => setLeftName(null), 4000);
+        }
       }
-      prevParticipantIdsRef.current = new Set(data.participants.map((p) => p.id));
+      const activeParticipants = data.participants.filter((p) => !p.left);
+      prevParticipantIdsRef.current = new Set(activeParticipants.map((p) => p.id));
+      prevParticipantsRef.current = activeParticipants;
+
+      // Detect new pending join requests (host only)
+      const pending = data.pendingJoinRequests || [];
+      if (prevPendingIdsRef.current) {
+        const prevPending = prevPendingIdsRef.current;
+        const newRequests = pending.filter((r) => !prevPending.has(r.id));
+        if (newRequests.length > 0) {
+          sfxJoinRequest();
+        }
+      }
+      prevPendingIdsRef.current = new Set(pending.map((r) => r.id));
+
+      // Track unread chat messages
+      const msgCount = (data.messages || []).length;
+      if (msgCount > prevMessageCountRef.current) {
+        const newMsgCount = msgCount - prevMessageCountRef.current;
+        if (!chatOpenRef.current) {
+          setUnreadCount((prev) => prev + newMsgCount);
+        }
+      }
+      prevMessageCountRef.current = msgCount;
 
       setBoard(data);
       setError(null);
@@ -103,19 +167,46 @@ export function BoardProvider({
         // localStorage not available (SSR, private browsing)
       }
 
-      // Detect if current participant was kicked
-      const stored = sessionStorage.getItem(`retro-participant-${boardId}`);
-      if (stored) {
-        try {
-          const p: Participant = JSON.parse(stored);
-          if (!data.participants.some((pp) => pp.id === p.id)) {
-            setKicked(true);
-            setParticipant(null);
-            sessionStorage.removeItem(`retro-participant-${boardId}`);
-            if (intervalRef.current) clearInterval(intervalRef.current);
+      // Detect if board was closed by host
+      if (data.closed) {
+        setRoomClosed(true);
+        setParticipant(null);
+        sessionStorage.removeItem(`retro-participant-${boardId}`);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+      } else {
+        // Detect if pending join request was approved or rejected
+        const pendingId = sessionStorage.getItem(`retro-pending-${boardId}`);
+        if (pendingId) {
+          const approvedP = data.participants.find((p) => p.id === pendingId && !p.left);
+          if (approvedP) {
+            // Approved — set as participant
+            setParticipant(approvedP);
+            sessionStorage.setItem(`retro-participant-${boardId}`, JSON.stringify(approvedP));
+            sessionStorage.removeItem(`retro-pending-${boardId}`);
+            setPendingRequestId(null);
+            setJoinRejected(false);
+          } else if (!(data.pendingJoinRequests || []).some((r) => r.id === pendingId)) {
+            // Not in participants and not in pending → rejected
+            sessionStorage.removeItem(`retro-pending-${boardId}`);
+            setPendingRequestId(null);
+            setJoinRejected(true);
           }
-        } catch {
-          // ignore
+        }
+
+        // Detect if current participant was kicked
+        const stored = sessionStorage.getItem(`retro-participant-${boardId}`);
+        if (stored) {
+          try {
+            const p: Participant = JSON.parse(stored);
+            if (!data.participants.some((pp) => pp.id === p.id)) {
+              setKicked(true);
+              setParticipant(null);
+              sessionStorage.removeItem(`retro-participant-${boardId}`);
+              if (intervalRef.current) clearInterval(intervalRef.current);
+            }
+          } catch {
+            // ignore
+          }
         }
       }
     } catch {
@@ -143,6 +234,11 @@ export function BoardProvider({
       } catch {
         // ignore
       }
+    }
+    // Restore pending request ID if waiting for approval
+    const pendingId = sessionStorage.getItem(`retro-pending-${boardId}`);
+    if (pendingId) {
+      setPendingRequestId(pendingId);
     }
   }, [boardId]);
 
@@ -172,10 +268,18 @@ export function BoardProvider({
   const joinBoard = useCallback(
     async (name: string) => {
       const result = await patchBoard({ action: "join", participantName: name });
-      const p = result.participant;
-      setParticipant(p);
-      setBoard(result.board);
-      sessionStorage.setItem(`retro-participant-${boardId}`, JSON.stringify(p));
+      if (result.pending) {
+        // Pending approval — store request ID and wait for host
+        setPendingRequestId(result.requestId);
+        setJoinRejected(false);
+        sessionStorage.setItem(`retro-pending-${boardId}`, result.requestId);
+      } else {
+        // Auto-joined (first user becomes host)
+        const p = result.participant;
+        setParticipant(p);
+        setBoard(result.board);
+        sessionStorage.setItem(`retro-participant-${boardId}`, JSON.stringify(p));
+      }
     },
     [patchBoard, boardId]
   );
@@ -274,6 +378,20 @@ export function BoardProvider({
     [patchBoard]
   );
 
+  const moveColumn = useCallback(
+    async (columnId: string, direction: "left" | "right") => {
+      await patchBoard({ action: "move-column", columnId, direction });
+    },
+    [patchBoard]
+  );
+
+  const reorderColumn = useCallback(
+    async (columnId: string, toIndex: number) => {
+      await patchBoard({ action: "reorder-column", columnId, toIndex });
+    },
+    [patchBoard]
+  );
+
   const kickParticipant = useCallback(
     async (participantId: string) => {
       await patchBoard({ action: "kick-participant", participantId, requesterId: participant?.id });
@@ -295,6 +413,83 @@ export function BoardProvider({
     [patchBoard, participant]
   );
 
+  const leaveBoard = useCallback(async () => {
+    if (!participant) return;
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    sessionStorage.removeItem(`retro-participant-${boardId}`);
+    await fetch(`/api/boards/${boardId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "leave", participantId: participant.id }),
+    });
+  }, [boardId, participant]);
+
+  const approveJoin = useCallback(
+    async (requestId: string) => {
+      await patchBoard({ action: "approve-join", requestId, requesterId: participant?.id });
+    },
+    [patchBoard, participant]
+  );
+
+  const rejectJoin = useCallback(
+    async (requestId: string) => {
+      await patchBoard({ action: "reject-join", requestId, requesterId: participant?.id });
+    },
+    [patchBoard, participant]
+  );
+
+  const assignHost = useCallback(async (newHostId: string) => {
+    if (!participant) return;
+    await fetch(`/api/boards/${boardId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "assign-host", newHostId, requesterId: participant.id }),
+    });
+  }, [boardId, participant]);
+
+  const sendMessage = useCallback(
+    async (text: string, toId?: string, toName?: string) => {
+      await patchBoard({
+        action: "send-message",
+        participantId: participant?.id,
+        participantName: participant?.name,
+        text,
+        ...(toId && toName ? { toId, toName } : {}),
+      });
+    },
+    [patchBoard, participant]
+  );
+
+  const handleSetChatOpen = useCallback((open: boolean) => {
+    setChatOpen(open);
+    chatOpenRef.current = open;
+    if (open) setUnreadCount(0);
+  }, []);
+
+  // Fire leave when user closes tab / navigates away
+  useEffect(() => {
+    if (!participant) return;
+    const pid = participant.id;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    const handleUnload = () => {
+      navigator.sendBeacon(
+        `/api/boards/${boardId}`,
+        new Blob(
+          [JSON.stringify({ action: "leave", participantId: pid })],
+          { type: "application/json" }
+        )
+      );
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("unload", handleUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("unload", handleUnload);
+    };
+  }, [boardId, participant]);
+
   const totalVotesByMe = board
     ? board.columns
         .flatMap((c) => c.cards)
@@ -310,8 +505,14 @@ export function BoardProvider({
         loading,
         error,
         kicked,
+        roomClosed,
         newJoinName,
+        leftName,
+        pendingRequestId,
+        joinRejected,
         joinBoard,
+        approveJoin,
+        rejectJoin,
         addCard,
         editCard,
         deleteCard,
@@ -323,9 +524,17 @@ export function BoardProvider({
         editColumn,
         deleteColumn,
         moveCard,
+        moveColumn,
+        reorderColumn,
         kickParticipant,
         toggleAnonymous,
         reactToCard,
+        leaveBoard,
+        assignHost,
+        sendMessage,
+        chatOpen,
+        setChatOpen: handleSetChatOpen,
+        unreadCount,
         totalVotesByMe,
       }}
     >

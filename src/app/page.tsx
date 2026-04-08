@@ -135,14 +135,14 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
-            <Link href="/blog" className="hover:text-foreground transition-colors">Blog</Link>
+            <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/create"
               className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
             >
-              Get Started Free
+              Get Started
             </Link>
           </div>
         </nav>

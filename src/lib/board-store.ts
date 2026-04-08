@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import type { Board, Column } from "./types";
 import { BOARD_TEMPLATES } from "./types";
-import { supabase } from "./supabase";
+import { db } from "./db";
 
 export async function createBoard(name: string, templateId: string): Promise<Board> {
   const template = BOARD_TEMPLATES.find((t) => t.id === templateId);
@@ -22,27 +22,26 @@ export async function createBoard(name: string, templateId: string): Promise<Boa
     createdAt: Date.now(),
     columns,
     participants: [],
+    pendingJoinRequests: [],
     hostId: null,
     timer: { running: false, remaining: 300, total: 300 },
     phase: "writing",
     maxVotesPerUser: 5,
+    messages: [],
   };
 
-  const { error } = await supabase
-    .from("boards")
-    .insert({ id: board.id, name: board.name, created_at: board.createdAt, data: board });
-  if (error) throw error;
+  db.prepare(
+    "INSERT INTO boards (id, name, created_at, data) VALUES (?, ?, ?, ?)"
+  ).run(board.id, board.name, board.createdAt, JSON.stringify(board));
+
   return board;
 }
 
 export async function getBoard(id: string): Promise<Board | undefined> {
-  const { data, error } = await supabase
-    .from("boards")
-    .select("data")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
-  return data?.data as Board | undefined;
+  const row = db.prepare("SELECT data FROM boards WHERE id = ?").get(id) as
+    | { data: string }
+    | undefined;
+  return row ? (JSON.parse(row.data) as Board) : undefined;
 }
 
 export async function updateBoard(
@@ -52,27 +51,23 @@ export async function updateBoard(
   const board = await getBoard(id);
   if (!board) return undefined;
   const updated = updater(board);
-  const { error } = await supabase.from("boards").update({ data: updated }).eq("id", id);
-  if (error) throw error;
+  db.prepare("UPDATE boards SET data = ? WHERE id = ?").run(
+    JSON.stringify(updated),
+    id
+  );
   return updated;
 }
 
 export async function deleteBoard(id: string): Promise<boolean> {
-  const { error, count } = await supabase
-    .from("boards")
-    .delete({ count: "exact" })
-    .eq("id", id);
-  if (error) throw error;
-  return (count ?? 0) > 0;
+  const result = db.prepare("DELETE FROM boards WHERE id = ?").run(id);
+  return result.changes > 0;
 }
 
 export async function getAllBoards(): Promise<Board[]> {
-  const { data, error } = await supabase
-    .from("boards")
-    .select("data")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map((row) => row.data as Board);
+  const rows = db
+    .prepare("SELECT data FROM boards ORDER BY created_at DESC")
+    .all() as { data: string }[];
+  return rows.map((row) => JSON.parse(row.data) as Board);
 }
 
 const IMPORT_COLORS = ["green", "red", "blue", "yellow", "purple", "orange"];
@@ -105,15 +100,17 @@ export async function createBoardFromImport(
     createdAt: Date.now(),
     columns,
     participants: [],
+    pendingJoinRequests: [],
     hostId: null,
     timer: { running: false, remaining: 300, total: 300 },
     phase: "writing",
     maxVotesPerUser: 5,
+    messages: [],
   };
 
-  const { error } = await supabase
-    .from("boards")
-    .insert({ id: board.id, name: board.name, created_at: board.createdAt, data: board });
-  if (error) throw error;
+  db.prepare(
+    "INSERT INTO boards (id, name, created_at, data) VALUES (?, ?, ?, ?)"
+  ).run(board.id, board.name, board.createdAt, JSON.stringify(board));
+
   return board;
 }

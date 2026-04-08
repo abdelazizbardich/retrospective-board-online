@@ -16,16 +16,29 @@ export interface Column {
   cards: Card[];
 }
 
+export interface ChatMessage {
+  id: string;
+  authorId: string;
+  authorName: string;
+  text: string;
+  toId?: string; // if set, it's a DM to this participant
+  toName?: string;
+  createdAt: number;
+}
+
 export interface Board {
   id: string;
   name: string;
   createdAt: number;
   columns: Column[];
   participants: Participant[];
+  pendingJoinRequests: PendingJoinRequest[];
   hostId: string | null;
   timer: TimerState;
   phase: BoardPhase;
   maxVotesPerUser: number;
+  messages: ChatMessage[];
+  closed?: boolean;
 }
 
 export interface Participant {
@@ -33,6 +46,13 @@ export interface Participant {
   name: string;
   joinedAt: number;
   anonymous: boolean;
+  left?: boolean;
+}
+
+export interface PendingJoinRequest {
+  id: string;
+  name: string;
+  requestedAt: number;
 }
 
 export interface TimerState {
@@ -41,7 +61,7 @@ export interface TimerState {
   total: number; // seconds
 }
 
-export type BoardPhase = "writing" | "grouping" | "voting" | "discussing" | "actions";
+export type BoardPhase = "writing" | "grouping" | "voting" | "discussing" | "done";
 
 export interface BoardTemplate {
   id: string;

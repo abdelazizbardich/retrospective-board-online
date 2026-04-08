@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { useBoardContext } from "@/lib/board-context";
-import { LayoutGrid, UserCircle2, Link2 } from "lucide-react";
-import { AdSlot } from "@/app/components/ad-slot";
+import { LayoutGrid, UserCircle2, Link2, Clock, XCircle } from "lucide-react";
 
 export function JoinForm({ boardName }: { boardName: string }) {
-  const { joinBoard } = useBoardContext();
+  const { joinBoard, pendingRequestId, joinRejected } = useBoardContext();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -28,6 +27,70 @@ export function JoinForm({ boardName }: { boardName: string }) {
     }
   };
 
+  // Waiting for host approval
+  if (pendingRequestId && !joinRejected) {
+    return (
+      <div className="relative flex min-h-screen items-center justify-center bg-background px-6 overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-125 w-175 -translate-x-1/2 rounded-full bg-linear-to-tr from-indigo-400/25 to-purple-400/15 blur-3xl"
+        />
+        <div className="w-full max-w-md">
+          <div className="flex items-center gap-2 justify-center mb-8">
+            <LayoutGrid className="size-6 text-primary" />
+            <span className="text-xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">SprintsPlans</span>
+          </div>
+          <div className="rounded-xl border border-border bg-background/80 backdrop-blur-sm p-8 shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/20">
+              <Clock className="size-7 text-amber-500 animate-pulse" />
+            </div>
+            <h1 className="text-xl font-bold">Waiting for approval</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              The host of <span className="font-semibold text-foreground">{boardName}</span> needs to approve your request to join.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <div className="size-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>This may take a moment...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Rejected by host
+  if (joinRejected) {
+    return (
+      <div className="relative flex min-h-screen items-center justify-center bg-background px-6 overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-125 w-175 -translate-x-1/2 rounded-full bg-linear-to-tr from-indigo-400/25 to-purple-400/15 blur-3xl"
+        />
+        <div className="w-full max-w-md">
+          <div className="flex items-center gap-2 justify-center mb-8">
+            <LayoutGrid className="size-6 text-primary" />
+            <span className="text-xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">SprintsPlans</span>
+          </div>
+          <div className="rounded-xl border border-border bg-background/80 backdrop-blur-sm p-8 shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-red-500/20 to-red-600/20 border border-red-500/20">
+              <XCircle className="size-7 text-red-500" />
+            </div>
+            <h1 className="text-xl font-bold">Request declined</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              The host of <span className="font-semibold text-foreground">{boardName}</span> has declined your join request.
+            </p>
+            <a
+              href="/"
+              className="mt-6 inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              Go Home
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background px-6 overflow-hidden">
       {/* Gradient blobs matching the landing page hero */}
@@ -35,16 +98,6 @@ export function JoinForm({ boardName }: { boardName: string }) {
         aria-hidden="true"
         className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-125 w-175 -translate-x-1/2 rounded-full bg-linear-to-tr from-indigo-400/25 to-purple-400/15 blur-3xl"
       />
-
-      {/* Left sidebar ad */}
-      <aside className="hidden lg:flex absolute left-6 top-1/2 -translate-y-1/2">
-        <AdSlot format="skyscraper" side="left" dismissible />
-      </aside>
-
-      {/* Right sidebar ad */}
-      <aside className="hidden lg:flex absolute right-6 top-1/2 -translate-y-1/2">
-        <AdSlot format="skyscraper" side="right" dismissible />
-      </aside>
 
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2 justify-center mb-8">
@@ -87,7 +140,7 @@ export function JoinForm({ boardName }: { boardName: string }) {
               disabled={loading}
               className="w-full rounded-xl bg-primary px-6 py-3 text-base font-bold text-primary-foreground shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {loading ? "Joining..." : "Join Board →"}
+              {loading ? "Requesting..." : "Join Board →"}
             </button>
           </form>
 

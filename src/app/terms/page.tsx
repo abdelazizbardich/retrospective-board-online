@@ -23,7 +23,7 @@ export default function TermsPage() {
             href="/create"
             className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
           >
-            Get Started Free
+            Get Started
           </Link>
         </nav>
       </header>

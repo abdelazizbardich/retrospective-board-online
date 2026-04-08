@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { supabase } from "./supabase";
+import { db } from "./db";
 
 export interface Page {
   id: string;
@@ -20,7 +20,7 @@ type PageRow = {
   title: string;
   content: string;
   meta_description: string;
-  published: boolean;
+  published: number; // SQLite stores booleans as 0/1
   created_at: number;
   updated_at: number;
 };
@@ -32,7 +32,7 @@ function rowToPage(row: PageRow): Page {
     title: row.title,
     content: row.content,
     metaDescription: row.meta_description,
-    published: row.published,
+    published: row.published === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -41,70 +41,62 @@ function rowToPage(row: PageRow): Page {
 // ── CRUD ───────────────────────────────────────────────────────────────────
 
 export async function getAllPages(includeUnpublished = false): Promise<Page[]> {
-  let q = supabase.from("pages").select("*").order("created_at", { ascending: false });
-  if (!includeUnpublished) q = q.eq("published", true);
-  const { data, error } = await q;
-  if (error) throw error;
-  return (data ?? []).map(rowToPage);
+  const rows = includeUnpublished
+    ? (db.prepare("SELECT * FROM pages ORDER BY created_at DESC").all() as PageRow[])
+    : (db
+        .prepare("SELECT * FROM pages WHERE published = 1 ORDER BY created_at DESC")
+        .all() as PageRow[]);
+  return rows.map(rowToPage);
 }
 
 export async function getPage(slug: string): Promise<Page | undefined> {
-  const { data, error } = await supabase
-    .from("pages")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (error) throw error;
-  return data ? rowToPage(data) : undefined;
+  const row = db.prepare("SELECT * FROM pages WHERE slug = ?").get(slug) as
+    | PageRow
+    | undefined;
+  return row ? rowToPage(row) : undefined;
 }
 
 export async function createPage(data: Omit<Page, "id" | "createdAt" | "updatedAt">): Promise<Page> {
   const id = nanoid(8);
   const now = Date.now();
-  const { data: inserted, error } = await supabase
-    .from("pages")
-    .insert({
-      id,
-      slug: data.slug,
-      title: data.title,
-      content: data.content,
-      meta_description: data.metaDescription,
-      published: data.published,
-      created_at: now,
-      updated_at: now,
-    })
-    .select()
-    .single();
-  if (error) throw error;
-  return rowToPage(inserted);
+  db.prepare(
+    `INSERT INTO pages (id, slug, title, content, meta_description, published, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(id, data.slug, data.title, data.content, data.metaDescription, data.published ? 1 : 0, now, now);
+
+  return {
+    id,
+    slug: data.slug,
+    title: data.title,
+    content: data.content,
+    metaDescription: data.metaDescription,
+    published: data.published,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 export async function updatePage(
   slug: string,
   patch: Partial<Omit<Page, "id" | "createdAt">>
 ): Promise<Page | undefined> {
-  const dbPatch: Record<string, unknown> = { updated_at: Date.now() };
-  if (patch.slug !== undefined)            dbPatch.slug             = patch.slug;
-  if (patch.title !== undefined)           dbPatch.title            = patch.title;
-  if (patch.content !== undefined)         dbPatch.content          = patch.content;
-  if (patch.metaDescription !== undefined) dbPatch.meta_description = patch.metaDescription;
-  if (patch.published !== undefined)       dbPatch.published        = patch.published;
+  const sets: string[] = ["updated_at = ?"];
+  const values: unknown[] = [Date.now()];
 
-  const { data, error } = await supabase
-    .from("pages")
-    .update(dbPatch)
-    .eq("slug", slug)
-    .select()
-    .maybeSingle();
-  if (error) throw error;
-  return data ? rowToPage(data) : undefined;
+  if (patch.slug !== undefined)            { sets.push("slug = ?");             values.push(patch.slug); }
+  if (patch.title !== undefined)           { sets.push("title = ?");            values.push(patch.title); }
+  if (patch.content !== undefined)         { sets.push("content = ?");          values.push(patch.content); }
+  if (patch.metaDescription !== undefined) { sets.push("meta_description = ?"); values.push(patch.metaDescription); }
+  if (patch.published !== undefined)       { sets.push("published = ?");        values.push(patch.published ? 1 : 0); }
+
+  values.push(slug);
+  db.prepare(`UPDATE pages SET ${sets.join(", ")} WHERE slug = ?`).run(...values);
+
+  const newSlug = patch.slug ?? slug;
+  return getPage(newSlug);
 }
 
 export async function deletePage(slug: string): Promise<boolean> {
-  const { error, count } = await supabase
-    .from("pages")
-    .delete({ count: "exact" })
-    .eq("slug", slug);
-  if (error) throw error;
-  return (count ?? 0) > 0;
+  const result = db.prepare("DELETE FROM pages WHERE slug = ?").run(slug);
+  return result.changes > 0;
 }

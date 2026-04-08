@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LayoutGrid, Mail, MessageSquare } from "lucide-react";
+import { LayoutGrid, Mail } from "lucide-react";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.app";
 
@@ -23,7 +23,7 @@ export default function ContactPage() {
             href="/create"
             className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
           >
-            Get Started Free
+            Get Started
           </Link>
         </nav>
       </header>
@@ -45,19 +45,6 @@ export default function ContactPage() {
             <div>
               <p className="font-semibold">Email</p>
               <p className="mt-1 text-sm text-muted-foreground break-all">hello@sprintsplans.app</p>
-            </div>
-          </a>
-
-          <a
-            href="/blog"
-            className="group flex items-start gap-4 rounded-2xl border border-border bg-background p-6 transition-shadow hover:shadow-md"
-          >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <MessageSquare className="size-5" />
-            </div>
-            <div>
-              <p className="font-semibold">Blog & Updates</p>
-              <p className="mt-1 text-sm text-muted-foreground">Read our latest articles and product news.</p>
             </div>
           </a>
         </div>
