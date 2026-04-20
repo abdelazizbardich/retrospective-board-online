@@ -146,6 +146,23 @@ body {
   z-index: 50;
 }
 
+@keyframes wiggle-card {
+  0%   { transform: rotate(0deg) scale(1); }
+  10%  { transform: rotate(-3deg) scale(1.03); }
+  25%  { transform: rotate(3deg) scale(1.04); }
+  40%  { transform: rotate(-2.5deg) scale(1.03); }
+  55%  { transform: rotate(2.5deg) scale(1.03); }
+  70%  { transform: rotate(-1.5deg) scale(1.02); }
+  85%  { transform: rotate(1deg) scale(1.01); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.animate-wiggle-card {
+  animation: wiggle-card 0.7s ease-in-out;
+  z-index: 50;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5), 0 8px 24px rgba(99, 102, 241, 0.2);
+}
+
 @keyframes timer-urgent {
   0%, 100% { border-color: #ef4444; background-color: rgba(239, 68, 68, 0.05); }
   50% { border-color: #ef4444; background-color: rgba(239, 68, 68, 0.15); }
