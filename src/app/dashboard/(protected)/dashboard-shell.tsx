@@ -2,7 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutGrid, BarChart3, LogOut, LayoutDashboard, FileText } from "lucide-react";
+import Image from "next/image";
+import { BarChart3, LogOut, LayoutDashboard, FileText } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -23,9 +24,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-muted/20">
       {/* Sidebar */}
       <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-border bg-background">
-        <div className="flex items-center gap-2 px-5 py-5 border-b border-border">
-          <LayoutGrid className="size-5 text-primary" />
-          <span className="font-bold text-sm">SprintsPlans Admin</span>
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
+          <Image src="/sprintsplans-logo.png" alt="SprintsPlans" width={120} height={24} className="h-6 w-auto" />
+          <span className="font-bold text-xs text-muted-foreground">Admin</span>
         </div>
         <nav className="flex flex-col gap-1 p-3 flex-1">
           {NAV.map(({ href, label, icon: Icon, exact }) => {
@@ -61,9 +62,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col">
         {/* Mobile top bar */}
         <header className="md:hidden flex items-center justify-between border-b border-border bg-background px-4 py-3">
-          <div className="flex items-center gap-2 font-bold text-sm">
-            <LayoutGrid className="size-4 text-primary" />
-            SprintsPlans Admin
+          <div className="flex items-center gap-1.5">
+            <Image src="/sprintsplans-logo.png" alt="SprintsPlans" width={100} height={20} className="h-5 w-auto" />
+            <span className="font-bold text-xs text-muted-foreground">Admin</span>
           </div>
           <div className="flex gap-1">
             {NAV.map(({ href, label, exact }) => {

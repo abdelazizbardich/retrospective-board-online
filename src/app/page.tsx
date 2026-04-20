@@ -11,6 +11,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://retroboard.app";
@@ -128,9 +129,8 @@ export default function Home() {
       {/* ─── NAVBAR ─── */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <LayoutGrid className="size-6 text-primary" />
-            <span>SprintsPlans</span>
+          <Link href="/">
+            <Image src="/sprintsplans-logo.png" alt="SprintsPlans" width={160} height={32} className="h-8 w-auto" priority />
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
@@ -414,9 +414,8 @@ export default function Home() {
       {/* ─── FOOTER ─── */}
       <footer className="border-t border-border py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
-          <div className="flex items-center gap-2 font-bold">
-            <LayoutGrid className="size-5 text-primary" />
-            SprintsPlans
+          <div className="flex items-center">
+            <Image src="/sprintsplans-logo.png" alt="SprintsPlans" width={140} height={28} className="h-7 w-auto" />
           </div>
           <p className="text-sm text-muted-foreground">
             © 2025 SprintsPlans. All rights reserved.
