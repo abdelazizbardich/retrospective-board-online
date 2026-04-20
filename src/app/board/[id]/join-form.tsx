@@ -41,19 +41,15 @@ export function JoinForm({ boardName }: { boardName: string }) {
   if (pendingRequestId && !joinRejected) {
     return (
       <div className="relative flex min-h-screen items-center justify-center bg-background px-6 overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-125 w-175 -translate-x-1/2 rounded-full bg-linear-to-tr from-indigo-400/25 to-purple-400/15 blur-3xl"
-        />
-        <div className="w-full max-w-md">
-          <div className="flex items-center gap-2 justify-center mb-8">
-            <LayoutGrid className="size-6 text-primary" />
-            <span className="text-xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">SprintsPlans</span>
+      <div className="w-full max-w-md">
+        <div className="flex items-center gap-2 justify-center mb-8">
+          <LayoutGrid className="size-6 text-primary" />
+          <span className="text-xl font-bold text-primary">SprintsPlans</span>
+        </div>
+        <div className="rounded-xl border border-border bg-background/80 backdrop-blur-sm p-8 shadow-2xl text-center">
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-brand-blue-bg border border-brand-blue-border-light">
+            <Clock className="size-7 text-brand-blue-stripe animate-pulse" />
           </div>
-          <div className="rounded-xl border border-border bg-background/80 backdrop-blur-sm p-8 shadow-2xl text-center">
-            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/20">
-              <Clock className="size-7 text-amber-500 animate-pulse" />
-            </div>
             <h1 className="text-xl font-bold">Waiting for approval</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               The host of <span className="font-semibold text-foreground">{boardName}</span> needs to approve your request to join.
@@ -72,17 +68,13 @@ export function JoinForm({ boardName }: { boardName: string }) {
   if (joinRejected) {
     return (
       <div className="relative flex min-h-screen items-center justify-center bg-background px-6 overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-125 w-175 -translate-x-1/2 rounded-full bg-linear-to-tr from-indigo-400/25 to-purple-400/15 blur-3xl"
-        />
         <div className="w-full max-w-md">
           <div className="flex items-center gap-2 justify-center mb-8">
             <LayoutGrid className="size-6 text-primary" />
-            <span className="text-xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">SprintsPlans</span>
+            <span className="text-xl font-bold text-primary">SprintsPlans</span>
           </div>
           <div className="rounded-xl border border-border bg-background/80 backdrop-blur-sm p-8 shadow-2xl text-center">
-            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-red-500/20 to-red-600/20 border border-red-500/20">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20">
               <XCircle className="size-7 text-red-500" />
             </div>
             <h1 className="text-xl font-bold">Request declined</h1>
@@ -103,23 +95,17 @@ export function JoinForm({ boardName }: { boardName: string }) {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background px-6 overflow-hidden">
-      {/* Gradient blobs matching the landing page hero */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-125 w-175 -translate-x-1/2 rounded-full bg-linear-to-tr from-indigo-400/25 to-purple-400/15 blur-3xl"
-      />
-
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2 justify-center mb-8">
           <LayoutGrid className="size-6 text-primary" />
-          <span className="text-xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">SprintsPlans</span>
+          <span className="text-xl font-bold text-primary">SprintsPlans</span>
         </div>
 
         {/* Logged-in: show auto-joining state */}
         {user ? (
           <div className="rounded-xl border border-border bg-background/80 backdrop-blur-sm p-8 shadow-2xl text-center">
-            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20">
-              <UserCircle2 className="size-7 text-indigo-500 animate-pulse" />
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-brand-blue-bg border border-brand-blue-border-light">
+              <UserCircle2 className="size-7 text-brand-blue-stripe animate-pulse" />
             </div>
             <h1 className="text-xl font-bold">Joining as {user.username}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -129,8 +115,8 @@ export function JoinForm({ boardName }: { boardName: string }) {
         ) : (
         <div className="rounded-xl border border-border bg-background/80 backdrop-blur-sm p-8 shadow-2xl">
           <div className="text-center mb-6">
-            <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20">
-              <UserCircle2 className="size-7 text-indigo-500" />
+            <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-xl bg-brand-blue-bg border border-brand-blue-border-light">
+              <UserCircle2 className="size-7 text-brand-blue-stripe" />
             </div>
             <h1 className="text-xl font-bold">Join Retrospective</h1>
             <p className="mt-1 text-sm text-muted-foreground">

@@ -22,14 +22,14 @@ import EmojiPicker, { type EmojiClickData, Theme } from "emoji-picker-react";
 
 const COLOR_MAP: Record<string, { border: string; bg: string; bodyBg: string; title: string; cardBg: string; cardStripe: string; accent: string; countBg: string }> = {
   green: {
-    border: "border-green-200 dark:border-green-900",
-    bg: "bg-green-50 dark:bg-green-950/40",
-    bodyBg: "bg-green-50/40 dark:bg-green-950/10",
-    title: "text-green-700 dark:text-green-400",
+    border: "border-brand-green-light",
+    bg: "brand-green-bg",
+    bodyBg: "brand-green-bg-body",
+    title: "brand-green-title",
     cardBg: "bg-white dark:bg-zinc-900",
-    cardStripe: "bg-green-400 dark:bg-green-500",
-    accent: "bg-green-400 dark:bg-green-600",
-    countBg: "bg-green-100 dark:bg-green-900/50",
+    cardStripe: "brand-green-stripe",
+    accent: "brand-green-stripe",
+    countBg: "brand-green-count brand-green-title",
   },
   red: {
     border: "border-red-200 dark:border-red-900",
@@ -42,34 +42,34 @@ const COLOR_MAP: Record<string, { border: string; bg: string; bodyBg: string; ti
     countBg: "bg-red-100 dark:bg-red-900/50",
   },
   blue: {
-    border: "border-blue-200 dark:border-blue-900",
-    bg: "bg-blue-50 dark:bg-blue-950/40",
-    bodyBg: "bg-blue-50/40 dark:bg-blue-950/10",
-    title: "text-blue-700 dark:text-blue-400",
+    border: "border-brand-blue-light",
+    bg: "brand-blue-bg",
+    bodyBg: "brand-blue-bg-body",
+    title: "brand-blue-title",
     cardBg: "bg-white dark:bg-zinc-900",
-    cardStripe: "bg-blue-400 dark:bg-blue-500",
-    accent: "bg-blue-400 dark:bg-blue-600",
-    countBg: "bg-blue-100 dark:bg-blue-900/50",
+    cardStripe: "brand-blue-stripe",
+    accent: "brand-blue-stripe",
+    countBg: "brand-blue-count brand-blue-title",
   },
   yellow: {
-    border: "border-yellow-200 dark:border-yellow-900",
-    bg: "bg-yellow-50 dark:bg-yellow-950/40",
-    bodyBg: "bg-yellow-50/40 dark:bg-yellow-950/10",
-    title: "text-yellow-700 dark:text-yellow-400",
+    border: "border-brand-yellow-light",
+    bg: "brand-yellow-bg",
+    bodyBg: "brand-yellow-bg-body",
+    title: "brand-yellow-title",
     cardBg: "bg-white dark:bg-zinc-900",
-    cardStripe: "bg-yellow-400 dark:bg-yellow-500",
-    accent: "bg-yellow-400 dark:bg-yellow-600",
-    countBg: "bg-yellow-100 dark:bg-yellow-900/50",
+    cardStripe: "brand-yellow-stripe",
+    accent: "brand-yellow-stripe",
+    countBg: "brand-yellow-count brand-yellow-title",
   },
   purple: {
-    border: "border-purple-200 dark:border-purple-900",
-    bg: "bg-purple-50 dark:bg-purple-950/40",
-    bodyBg: "bg-purple-50/40 dark:bg-purple-950/10",
-    title: "text-purple-700 dark:text-purple-400",
+    border: "border-brand-purple-light",
+    bg: "brand-purple-bg",
+    bodyBg: "brand-purple-bg-body",
+    title: "brand-purple-title",
     cardBg: "bg-white dark:bg-zinc-900",
-    cardStripe: "bg-purple-400 dark:bg-purple-500",
-    accent: "bg-purple-400 dark:bg-purple-600",
-    countBg: "bg-purple-100 dark:bg-purple-900/50",
+    cardStripe: "brand-purple-stripe",
+    accent: "brand-purple-stripe",
+    countBg: "brand-purple-count brand-purple-title",
   },
 };
 
@@ -232,11 +232,11 @@ export function BoardColumn({ column, index, total }: { column: Column; index: n
                 }`}
                 style={{
                   backgroundColor:
-                    c.key === "green" ? "#86efac" :
+                    c.key === "green" ? "#269353" :
                     c.key === "red" ? "#fca5a5" :
-                    c.key === "blue" ? "#93c5fd" :
-                    c.key === "yellow" ? "#fde68a" :
-                    "#c4b5fd",
+                    c.key === "blue" ? "#2b48a9" :
+                    c.key === "yellow" ? "#d5a615" :
+                    "#a541b2",
                 }}
                 title={c.label}
               />

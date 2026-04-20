@@ -5,11 +5,11 @@ import { useBoardContext } from "@/lib/board-context";
 import { Plus, X, Check } from "lucide-react";
 
 const AVAILABLE_COLORS = [
-  { key: "green", label: "Green", hex: "#86efac" },
+  { key: "green", label: "Green", hex: "#269353" },
   { key: "red", label: "Red", hex: "#fca5a5" },
-  { key: "blue", label: "Blue", hex: "#93c5fd" },
-  { key: "yellow", label: "Yellow", hex: "#fde68a" },
-  { key: "purple", label: "Purple", hex: "#c4b5fd" },
+  { key: "blue", label: "Blue", hex: "#2b48a9" },
+  { key: "yellow", label: "Yellow", hex: "#d5a615" },
+  { key: "purple", label: "Purple", hex: "#a541b2" },
 ];
 
 export function AddColumnButton() {

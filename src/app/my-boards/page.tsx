@@ -69,10 +69,6 @@ function AuthForm() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background px-6 overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-125 w-175 -translate-x-1/2 rounded-full bg-linear-to-tr from-indigo-400/25 to-purple-400/15 blur-3xl"
-      />
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
           <Image src="/sprintsplans-logo.png" alt="SprintsPlans" width={160} height={32} className="h-8 w-auto" />

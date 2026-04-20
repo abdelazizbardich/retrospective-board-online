@@ -156,11 +156,6 @@ export default function Home() {
 
       {/* ─── HERO ─── */}
       <section className="relative overflow-hidden">
-        {/* Gradient blobs */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-gradient-to-tr from-indigo-400/30 to-purple-400/20 blur-3xl"
-        />
         <div className="mx-auto max-w-4xl px-6 pt-28 pb-20 text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-1.5 text-sm text-muted-foreground">
             <Timer className="size-4" />
@@ -168,7 +163,7 @@ export default function Home() {
           </div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
             Better Retrospectives,{" "}
-            <span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+            <span className="text-primary">
               Happier Teams
             </span>
           </h1>
@@ -390,7 +385,7 @@ export default function Home() {
       </section>
 
       {/* ─── FINAL CTA ─── */}
-      <section className="border-t border-border bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent py-24">
+      <section className="border-t border-border bg-brand-blue-bg/40 py-24">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Ready to transform your retrospectives?
