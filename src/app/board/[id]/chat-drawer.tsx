@@ -13,15 +13,18 @@ const STRIPE_COLORS: Record<string, string> = {
   purple: "bg-purple-400 dark:bg-purple-500",
 };
 
-/** Scroll to a card on the board and flash-highlight it */
+/** Scroll to a card on the board and wiggle it */
 function scrollToCard(cardId: string) {
   const el = document.getElementById(`card-${cardId}`);
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "center" });
-  el.classList.remove("animate-highlight-card");
-  void el.offsetWidth;
-  el.classList.add("animate-highlight-card");
-  el.addEventListener("animationend", () => el.classList.remove("animate-highlight-card"), { once: true });
+  // Small delay so the scroll completes before wiggle starts
+  setTimeout(() => {
+    el.classList.remove("animate-wiggle-card");
+    void el.offsetWidth;
+    el.classList.add("animate-wiggle-card");
+    el.addEventListener("animationend", () => el.classList.remove("animate-wiggle-card"), { once: true });
+  }, 300);
 }
 
 interface CardInfo {
