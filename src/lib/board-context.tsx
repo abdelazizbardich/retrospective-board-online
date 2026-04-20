@@ -48,6 +48,7 @@ interface BoardContextValue {
   setChatOpen: (open: boolean) => void;
   unreadCount: number;
   totalVotesByMe: number;
+  reopenSession: () => Promise<void>;
 }
 
 const BoardContext = createContext<BoardContextValue | null>(null);
@@ -491,6 +492,15 @@ export function BoardProvider({
     };
   }, [boardId, participant]);
 
+  const reopenSession = useCallback(async () => {
+    await patchBoard({ action: "reopen-session" });
+    setRoomClosed(false);
+    // Restart polling
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(fetchBoard, 2000);
+    fetchBoard();
+  }, [patchBoard, fetchBoard]);
+
   const totalVotesByMe = board
     ? board.columns
         .flatMap((c) => c.cards)
@@ -537,6 +547,7 @@ export function BoardProvider({
         setChatOpen: handleSetChatOpen,
         unreadCount,
         totalVotesByMe,
+        reopenSession,
       }}
     >
       {children}

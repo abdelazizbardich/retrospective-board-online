@@ -3,7 +3,7 @@ import type { Board, Column } from "./types";
 import { BOARD_TEMPLATES } from "./types";
 import { getSupabase } from "./db";
 
-export async function createBoard(name: string, templateId: string): Promise<Board> {
+export async function createBoard(name: string, templateId: string, ownerId?: string): Promise<Board> {
   const template = BOARD_TEMPLATES.find((t) => t.id === templateId);
   if (!template) throw new Error(`Template "${templateId}" not found`);
 
@@ -32,7 +32,7 @@ export async function createBoard(name: string, templateId: string): Promise<Boa
 
   const { error } = await getSupabase()
     .from("boards")
-    .insert({ id: board.id, name: board.name, created_at: board.createdAt, data: board });
+    .insert({ id: board.id, name: board.name, created_at: board.createdAt, data: board, ...(ownerId ? { owner_id: ownerId } : {}) });
 
   if (error) throw new Error(error.message);
   return board;
@@ -41,7 +41,7 @@ export async function createBoard(name: string, templateId: string): Promise<Boa
 export async function getBoard(id: string): Promise<Board | undefined> {
   const { data, error } = await getSupabase()
     .from("boards")
-    .select("data")
+    .select("data, owner_id")
     .eq("id", id)
     .single();
 
@@ -49,7 +49,8 @@ export async function getBoard(id: string): Promise<Board | undefined> {
     if (error.code === "PGRST116") return undefined; // row not found
     throw new Error(error.message);
   }
-  return data.data as Board;
+  const board = data.data as Board;
+  return data.owner_id ? { ...board, ownerId: data.owner_id as string } : board;
 }
 
 export async function updateBoard(
@@ -89,12 +90,24 @@ export async function getAllBoards(): Promise<Board[]> {
   return (data ?? []).map((row) => row.data as Board);
 }
 
+export async function getBoardsByOwner(ownerId: string): Promise<Board[]> {
+  const { data, error } = await getSupabase()
+    .from("boards")
+    .select("data")
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => row.data as Board);
+}
+
 const IMPORT_COLORS = ["green", "red", "blue", "yellow", "purple", "orange"];
 const IMPORT_EMOJIS = ["📝", "💬", "🎯", "💡", "⭐", "🔧", "📌", "🚀"];
 
 export async function createBoardFromImport(
   name: string,
-  importedColumns: { title: string; cards: string[] }[]
+  importedColumns: { title: string; cards: string[] }[],
+  ownerId?: string
 ): Promise<Board> {
   const boardId = nanoid(10);
   const columns: Column[] = importedColumns.map((col, i) => ({
@@ -129,7 +142,7 @@ export async function createBoardFromImport(
 
   const { error } = await getSupabase()
     .from("boards")
-    .insert({ id: board.id, name: board.name, created_at: board.createdAt, data: board });
+    .insert({ id: board.id, name: board.name, created_at: board.createdAt, data: board, ...(ownerId ? { owner_id: ownerId } : {}) });
 
   if (error) throw new Error(error.message);
   return board;

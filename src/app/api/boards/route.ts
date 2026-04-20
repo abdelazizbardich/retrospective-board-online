@@ -4,7 +4,7 @@ import { BOARD_TEMPLATES } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { name, templateId, columns: importedColumns } = body;
+  const { name, templateId, columns: importedColumns, ownerId } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "Board name is required" }, { status: 400 });
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     if (cleaned.length === 0) {
       return NextResponse.json({ error: "No valid columns found in file" }, { status: 400 });
     }
-    const board = await createBoardFromImport(name.trim(), cleaned);
+    const board = await createBoardFromImport(name.trim(), cleaned, typeof ownerId === "string" ? ownerId : undefined);
     return NextResponse.json(board, { status: 201 });
   }
 
@@ -35,6 +35,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid template" }, { status: 400 });
   }
 
-  const board = await createBoard(name.trim(), templateId);
+  const board = await createBoard(name.trim(), templateId, typeof ownerId === "string" ? ownerId : undefined);
   return NextResponse.json(board, { status: 201 });
 }

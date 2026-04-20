@@ -139,6 +139,12 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <Link
+              href="/my-boards"
+              className="inline-flex items-center rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              My Boards
+            </Link>
+            <Link
               href="/create"
               className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
             >

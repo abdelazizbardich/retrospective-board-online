@@ -568,8 +568,6 @@ function CardItem({
       onDragStart={canManageCard ? handleDragStart : undefined}
       onDragEnd={canManageCard ? handleDragEnd : undefined}
     >
-      {/* Left color stripe */}
-      <div className={`w-1 shrink-0 rounded-l-xl ${colors.cardStripe} opacity-70`} />
 
       <div className="flex-1 px-3 pt-3 pb-4 min-w-0">
       {/* Floating reaction bar — appears on card hover */}

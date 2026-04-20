@@ -42,6 +42,7 @@ export interface Board {
   maxVotesPerUser: number;
   messages: ChatMessage[];
   closed?: boolean;
+  ownerId?: string;
 }
 
 export interface Participant {

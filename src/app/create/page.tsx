@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BOARD_TEMPLATES } from "@/lib/types";
 import { FluentEmoji } from "@/lib/fluent-emoji";
+import { useUser } from "@/lib/user-context";
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,6 +14,8 @@ import {
   FileSpreadsheet,
   Upload,
   X,
+  Lock,
+  UserCircle2,
   Table2,
 } from "lucide-react";
 
@@ -71,7 +74,17 @@ async function parseExcelFile(file: File): Promise<ImportedColumn[]> {
 
 export default function CreateBoardPage() {
   const router = useRouter();
+  const { user, login, register } = useUser();
   const [mode, setMode] = useState<"template" | "import">("template");
+
+  // Identity state (if user not logged in)
+  const [identityUsername, setIdentityUsername] = useState("");
+  const [identityPassword, setIdentityPassword] = useState("");
+  const [identityUsePassword, setIdentityUsePassword] = useState(false);
+  const [identityMode, setIdentityMode] = useState<"login" | "register">("login");
+  const [identityLoading, setIdentityLoading] = useState(false);
+  const [identityError, setIdentityError] = useState("");
+  const [identityDone, setIdentityDone] = useState(false);
 
   // Template mode state
   const [name, setName] = useState("");
@@ -99,7 +112,7 @@ export default function CreateBoardPage() {
       const res = await fetch("/api/boards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), templateId: selectedTemplate }),
+        body: JSON.stringify({ name: name.trim(), templateId: selectedTemplate, ...(user ? { ownerId: user.id } : {}) }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -172,7 +185,7 @@ export default function CreateBoardPage() {
       const res = await fetch("/api/boards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: importName.trim(), columns: importColumns }),
+        body: JSON.stringify({ name: importName.trim(), columns: importColumns, ...(user ? { ownerId: user.id } : {}) }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -186,6 +199,18 @@ export default function CreateBoardPage() {
     } finally {
       setImporting(false);
     }
+  };
+
+  const handleIdentity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!identityUsername.trim()) { setIdentityError("Username is required"); return; }
+    setIdentityLoading(true);
+    setIdentityError("");
+    const fn = identityMode === "login" ? login : register;
+    const result = await fn(identityUsername.trim(), identityUsePassword ? identityPassword : undefined);
+    if (!result.success) { setIdentityError(result.error ?? "Something went wrong"); }
+    else { setIdentityDone(true); }
+    setIdentityLoading(false);
   };
 
   return (
@@ -212,6 +237,89 @@ export default function CreateBoardPage() {
         <p className="mt-2 text-muted-foreground">
           Start from a template or import an existing board from Excel.
         </p>
+
+        {/* ── Identity banner ── */}
+        {user ? (
+          <div className="mt-6 flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
+            <UserCircle2 className="size-5 text-primary shrink-0" />
+            <span className="flex-1">
+              Creating as <span className="font-semibold">{user.username}</span>
+              {user.hasPassword && <Lock className="inline ml-1 size-3 text-muted-foreground" />}
+              {" — "}
+              <Link href="/my-boards" className="text-primary hover:underline">My Boards</Link>
+            </span>
+          </div>
+        ) : !identityDone ? (
+          <div className="mt-6 rounded-xl border border-border bg-muted/20 p-5">
+            <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <UserCircle2 className="size-4 text-primary" />
+              Save this board to your account (optional)
+            </p>
+            <div className="flex gap-1 rounded-lg border border-border bg-muted/40 p-0.5 mb-4 w-fit">
+              {(["login", "register"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => { setIdentityMode(m); setIdentityError(""); }}
+                  className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
+                    identityMode === m ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {m === "login" ? "Sign In" : "Create Account"}
+                </button>
+              ))}
+            </div>
+            <form onSubmit={handleIdentity} className="flex flex-wrap gap-2 items-start">
+              <input
+                type="text"
+                value={identityUsername}
+                onChange={(e) => setIdentityUsername(e.target.value)}
+                placeholder="Username"
+                maxLength={50}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 w-44"
+              />
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none self-center">
+                <input
+                  type="checkbox"
+                  checked={identityUsePassword}
+                  onChange={(e) => setIdentityUsePassword(e.target.checked)}
+                  className="rounded"
+                />
+                <Lock className="size-3" />
+                Password
+              </label>
+              {identityUsePassword && (
+                <input
+                  type="password"
+                  value={identityPassword}
+                  onChange={(e) => setIdentityPassword(e.target.value)}
+                  placeholder="Password"
+                  maxLength={200}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 w-44"
+                />
+              )}
+              <button
+                type="submit"
+                disabled={identityLoading}
+                className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {identityLoading ? "…" : identityMode === "login" ? "Sign In" : "Create Account"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIdentityDone(true)}
+                className="rounded-lg border border-border px-4 py-2 text-xs text-muted-foreground hover:bg-muted transition-colors"
+              >
+                Skip
+              </button>
+            </form>
+            {identityError && <p className="mt-2 text-xs text-red-500">{identityError}</p>}
+          </div>
+        ) : (
+          <div className="mt-6 flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            <span>Creating as guest — board won&apos;t be saved to any account.</span>
+          </div>
+        )}
 
         {/* Mode tabs */}
         <div className="mt-8 flex gap-1 rounded-xl border border-border bg-muted/40 p-1 w-fit">

@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useBoardContext } from "@/lib/board-context";
+import { useUser } from "@/lib/user-context";
 import { LayoutGrid, UserCircle2, Link2, Clock, XCircle } from "lucide-react";
 
 export function JoinForm({ boardName }: { boardName: string }) {
   const { joinBoard, pendingRequestId, joinRejected } = useBoardContext();
+  const { user } = useUser();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // If user is logged in, auto-join with their username
+  useEffect(() => {
+    if (user && !pendingRequestId && !joinRejected) {
+      joinBoard(user.username).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.username]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +115,18 @@ export function JoinForm({ boardName }: { boardName: string }) {
           <span className="text-xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">SprintsPlans</span>
         </div>
 
+        {/* Logged-in: show auto-joining state */}
+        {user ? (
+          <div className="rounded-xl border border-border bg-background/80 backdrop-blur-sm p-8 shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20">
+              <UserCircle2 className="size-7 text-indigo-500 animate-pulse" />
+            </div>
+            <h1 className="text-xl font-bold">Joining as {user.username}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Joining <span className="font-semibold text-foreground">{boardName}</span>…
+            </p>
+          </div>
+        ) : (
         <div className="rounded-xl border border-border bg-background/80 backdrop-blur-sm p-8 shadow-2xl">
           <div className="text-center mb-6">
             <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20">
@@ -149,6 +171,7 @@ export function JoinForm({ boardName }: { boardName: string }) {
             <span>You were invited via a private link</span>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

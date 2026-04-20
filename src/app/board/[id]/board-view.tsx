@@ -8,9 +8,11 @@ import { BoardColumn } from "./board-column";
 import { AddColumnButton } from "./add-column-button";
 import { ChatDrawer } from "./chat-drawer";
 import { FluentEmoji } from "@/lib/fluent-emoji";
+import { useUser } from "@/lib/user-context";
 
 export function BoardView() {
-  const { board, participant, loading, error, kicked, roomClosed, newJoinName, leftName } = useBoardContext();
+  const { board, participant, loading, error, kicked, roomClosed, newJoinName, leftName, reopenSession } = useBoardContext();
+  const { user } = useUser();
   const [activeColIdx, setActiveColIdx] = useState(0);
   const isDone = board?.phase === "done";
   const isHost = participant?.id === board?.hostId;
@@ -66,6 +68,7 @@ export function BoardView() {
   }
 
   if (roomClosed) {
+    const isOwner = !!(user?.id && board?.ownerId && user.id === board.ownerId);
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center max-w-sm">
@@ -74,12 +77,22 @@ export function BoardView() {
           <p className="mt-2 text-muted-foreground">
             The host has closed the retrospective session.
           </p>
-          <a
-            href="/"
-            className="mt-6 inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
-          >
-            Go Home
-          </a>
+          <div className="mt-6 flex flex-col items-center gap-3">
+            {isOwner && (
+              <button
+                onClick={reopenSession}
+                className="inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                Reopen Session
+              </button>
+            )}
+            <a
+              href="/"
+              className="inline-flex rounded-xl border border-border px-6 py-3 text-sm font-semibold hover:bg-accent transition-colors"
+            >
+              Go Home
+            </a>
+          </div>
         </div>
       </div>
     );

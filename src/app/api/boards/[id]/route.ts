@@ -563,6 +563,19 @@ export async function PATCH(
       return NextResponse.json(updated);
     }
 
+    case "reopen-session": {
+      if (!board.closed) {
+        return NextResponse.json(board); // already open — no-op
+      }
+      const updated = await updateBoard(id, (b) => ({
+        ...b,
+        closed: false,
+        participants: [],
+        hostId: null,
+      }));
+      return NextResponse.json(updated);
+    }
+
     case "send-message": {
       const { participantId, participantName, text, toId, toName, replyToId, replyToText, replyToAuthor } = body;
       if (!participantId || !participantName) {
