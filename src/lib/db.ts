@@ -1,47 +1,15 @@
-import { createClient, type Client } from "@libsql/client";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-let _client: Client | undefined;
-let _initialized = false;
+let _client: SupabaseClient | undefined;
 
-function getClient(): Client {
+export function getSupabase(): SupabaseClient {
   if (!_client) {
-    _client = createClient({
-      url: process.env.TURSO_DATABASE_URL!,
-      authToken: process.env.TURSO_AUTH_TOKEN,
-    });
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+      throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables");
+    }
+    _client = createClient(url, key, { auth: { persistSession: false } });
   }
   return _client;
 }
-
-async function ensureSchema(): Promise<void> {
-  if (_initialized) return;
-  const client = getClient();
-  await client.batch([
-    {
-      sql: `CREATE TABLE IF NOT EXISTS boards (
-        id         TEXT PRIMARY KEY,
-        name       TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        data       TEXT NOT NULL
-      )`,
-      args: [],
-    },
-    {
-      sql: `CREATE TABLE IF NOT EXISTS pages (
-        id               TEXT PRIMARY KEY,
-        slug             TEXT UNIQUE NOT NULL,
-        title            TEXT NOT NULL,
-        content          TEXT NOT NULL DEFAULT '',
-        meta_description TEXT NOT NULL DEFAULT '',
-        published        INTEGER NOT NULL DEFAULT 0,
-        created_at       INTEGER NOT NULL,
-        updated_at       INTEGER NOT NULL
-      )`,
-      args: [],
-    },
-  ]);
-  _initialized = true;
-}
-
-// Export the getClient function directly instead of using a problematic Proxy
-export { getClient, ensureSchema };

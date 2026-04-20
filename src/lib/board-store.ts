@@ -1,10 +1,9 @@
 import { nanoid } from "nanoid";
 import type { Board, Column } from "./types";
 import { BOARD_TEMPLATES } from "./types";
-import { getClient, ensureSchema } from "./db";
+import { getSupabase } from "./db";
 
 export async function createBoard(name: string, templateId: string): Promise<Board> {
-  await ensureSchema();
   const template = BOARD_TEMPLATES.find((t) => t.id === templateId);
   if (!template) throw new Error(`Template "${templateId}" not found`);
 
@@ -31,22 +30,26 @@ export async function createBoard(name: string, templateId: string): Promise<Boa
     messages: [],
   };
 
-  await getClient().execute({
-    sql: "INSERT INTO boards (id, name, created_at, data) VALUES (?, ?, ?, ?)",
-    args: [board.id, board.name, board.createdAt, JSON.stringify(board)],
-  });
+  const { error } = await getSupabase()
+    .from("boards")
+    .insert({ id: board.id, name: board.name, created_at: board.createdAt, data: board });
 
+  if (error) throw new Error(error.message);
   return board;
 }
 
 export async function getBoard(id: string): Promise<Board | undefined> {
-  await ensureSchema();
-  const result = await getClient().execute({
-    sql: "SELECT data FROM boards WHERE id = ?",
-    args: [id],
-  });
-  const row = result.rows[0];
-  return row ? (JSON.parse(row.data as string) as Board) : undefined;
+  const { data, error } = await getSupabase()
+    .from("boards")
+    .select("data")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") return undefined; // row not found
+    throw new Error(error.message);
+  }
+  return data.data as Board;
 }
 
 export async function updateBoard(
@@ -56,28 +59,34 @@ export async function updateBoard(
   const board = await getBoard(id);
   if (!board) return undefined;
   const updated = updater(board);
-  await getClient().execute({
-    sql: "UPDATE boards SET data = ? WHERE id = ?",
-    args: [JSON.stringify(updated), id],
-  });
+
+  const { error } = await getSupabase()
+    .from("boards")
+    .update({ data: updated })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
   return updated;
 }
 
 export async function deleteBoard(id: string): Promise<boolean> {
-  const result = await getClient().execute({
-    sql: "DELETE FROM boards WHERE id = ?",
-    args: [id],
-  });
-  return result.rowsAffected > 0;
+  const { error, count } = await getSupabase()
+    .from("boards")
+    .delete({ count: "exact" })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  return (count ?? 0) > 0;
 }
 
 export async function getAllBoards(): Promise<Board[]> {
-  await ensureSchema();
-  const result = await getClient().execute({
-    sql: "SELECT data FROM boards ORDER BY created_at DESC",
-    args: [],
-  });
-  return result.rows.map((row) => JSON.parse(row.data as string) as Board);
+  const { data, error } = await getSupabase()
+    .from("boards")
+    .select("data")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => row.data as Board);
 }
 
 const IMPORT_COLORS = ["green", "red", "blue", "yellow", "purple", "orange"];
@@ -87,7 +96,6 @@ export async function createBoardFromImport(
   name: string,
   importedColumns: { title: string; cards: string[] }[]
 ): Promise<Board> {
-  await ensureSchema();
   const boardId = nanoid(10);
   const columns: Column[] = importedColumns.map((col, i) => ({
     id: nanoid(8),
@@ -119,10 +127,11 @@ export async function createBoardFromImport(
     messages: [],
   };
 
-  await getClient().execute({
-    sql: "INSERT INTO boards (id, name, created_at, data) VALUES (?, ?, ?, ?)",
-    args: [board.id, board.name, board.createdAt, JSON.stringify(board)],
-  });
+  const { error } = await getSupabase()
+    .from("boards")
+    .insert({ id: board.id, name: board.name, created_at: board.createdAt, data: board });
 
+  if (error) throw new Error(error.message);
   return board;
 }
+
