@@ -15,7 +15,7 @@ export function JoinForm({ boardName }: { boardName: string }) {
   // If user is logged in, auto-join with their username
   useEffect(() => {
     if (user && !pendingRequestId && !joinRejected) {
-      joinBoard(user.username).catch(() => {});
+      joinBoard(user.username, user.id).catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.username]);

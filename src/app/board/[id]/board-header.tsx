@@ -474,7 +474,7 @@ export function BoardHeader() {
         </div>
 
         {/* Current phase banner */}
-        <div key={board.phase} className="flex flex-wrap items-center gap-2 sm:gap-3 rounded-xl bg-brand-blue-bg border border-brand-blue-border-light px-3 sm:px-4 py-2.5 animate-fade-in-scale">
+        <div key={board.phase} className="flex flex-wrap items-center gap-2 sm:gap-3 rounded-xl border border-border bg-background/60 px-3 sm:px-4 py-2.5 animate-fade-in-scale">
           <FluentEmoji emoji={currentPhase.emoji} size="3.5rem" />
           <div className="flex-1 min-w-0">
             <p className="text-xs sm:text-sm font-bold text-primary">
