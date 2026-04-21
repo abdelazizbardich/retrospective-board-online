@@ -3,12 +3,19 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --primary: #6366f1;
+  --primary: #2b48a9;
   --primary-foreground: #ffffff;
   --muted: #f4f4f5;
   --muted-foreground: #71717a;
-  --accent: #818cf8;
+  --accent: #269353;
   --border: #e4e4e7;
+
+  /* Brand colors */
+  --brand-blue: #2b48a9;
+  --brand-green: #269353;
+  --brand-yellow: #d5a615;
+  --brand-purple: #a541b2;
+  --brand-dark: #6c6e6f;
 }
 
 @theme inline {
@@ -28,11 +35,11 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
-    --primary: #818cf8;
+    --primary: #4a6fdd;
     --primary-foreground: #0a0a0a;
     --muted: #27272a;
     --muted-foreground: #a1a1aa;
-    --accent: #6366f1;
+    --accent: #3db368;
     --border: #3f3f46;
   }
 }
@@ -43,7 +50,44 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ---- Animations ---- */
+/* ── Brand Color Utilities ─────────────────────────────────────────── */
+.border-brand-blue-light { border-color: rgb(43 72 169 / 0.2); }
+.brand-blue-bg { background-color: rgb(43 72 169 / 0.05); }
+.brand-blue-bg-body { background-color: rgb(43 72 169 / 0.02); }
+.brand-blue-title { color: #2b48a9; }
+.dark .brand-blue-title { color: #4a6fdd; }
+.brand-blue-stripe { background-color: #2b48a9; }
+.dark .brand-blue-stripe { background-color: #4a6fdd; }
+.brand-blue-count { background-color: rgb(43 72 169 / 0.1); }
+
+.border-brand-green-light { border-color: rgb(38 147 83 / 0.2); }
+.brand-green-bg { background-color: rgb(38 147 83 / 0.05); }
+.brand-green-bg-body { background-color: rgb(38 147 83 / 0.02); }
+.brand-green-title { color: #269353; }
+.dark .brand-green-title { color: #3db368; }
+.brand-green-stripe { background-color: #269353; }
+.dark .brand-green-stripe { background-color: #3db368; }
+.brand-green-count { background-color: rgb(38 147 83 / 0.1); }
+
+.border-brand-yellow-light { border-color: rgb(213 166 21 / 0.2); }
+.brand-yellow-bg { background-color: rgb(213 166 21 / 0.05); }
+.brand-yellow-bg-body { background-color: rgb(213 166 21 / 0.02); }
+.brand-yellow-title { color: #d5a615; }
+.dark .brand-yellow-title { color: #ffc107; }
+.brand-yellow-stripe { background-color: #d5a615; }
+.dark .brand-yellow-stripe { background-color: #ffc107; }
+.brand-yellow-count { background-color: rgb(213 166 21 / 0.1); }
+
+.border-brand-purple-light { border-color: rgb(165 65 178 / 0.2); }
+.brand-purple-bg { background-color: rgb(165 65 178 / 0.05); }
+.brand-purple-bg-body { background-color: rgb(165 65 178 / 0.02); }
+.brand-purple-title { color: #a541b2; }
+.dark .brand-purple-title { color: #d966e8; }
+.brand-purple-stripe { background-color: #a541b2; }
+.dark .brand-purple-stripe { background-color: #d966e8; }
+.brand-purple-count { background-color: rgb(165 65 178 / 0.1); }
+
+/* ── Animations ──────────────────────────────────────────────────── */
 
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(12px); }
@@ -73,8 +117,8 @@ body {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
-  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.15); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(43, 72, 169, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(43, 72, 169, 0.15); }
 }
 
 @keyframes timer-pulse {
@@ -132,13 +176,13 @@ body {
 }
 
 @keyframes highlight-card {
-  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); transform: scale(1); }
-  15% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.5); transform: scale(1.03); }
+  0% { box-shadow: 0 0 0 0 rgba(43, 72, 169, 0.7); transform: scale(1); }
+  15% { box-shadow: 0 0 0 6px rgba(43, 72, 169, 0.5); transform: scale(1.03); }
   30% { transform: scale(0.98); }
-  45% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0.3); transform: scale(1.02); }
+  45% { box-shadow: 0 0 0 10px rgba(43, 72, 169, 0.3); transform: scale(1.02); }
   60% { transform: scale(0.99); }
-  75% { box-shadow: 0 0 0 14px rgba(99, 102, 241, 0.1); transform: scale(1.01); }
-  100% { box-shadow: 0 0 0 16px rgba(99, 102, 241, 0); transform: scale(1); }
+  75% { box-shadow: 0 0 0 14px rgba(43, 72, 169, 0.1); transform: scale(1.01); }
+  100% { box-shadow: 0 0 0 16px rgba(43, 72, 169, 0); transform: scale(1); }
 }
 
 .animate-highlight-card {
@@ -160,7 +204,7 @@ body {
 .animate-wiggle-card {
   animation: wiggle-card 0.7s ease-in-out;
   z-index: 50;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5), 0 8px 24px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 0 3px rgba(43, 72, 169, 0.5), 0 8px 24px rgba(43, 72, 169, 0.2);
 }
 
 @keyframes timer-urgent {

@@ -195,7 +195,7 @@ export async function PATCH(
     }
 
     case "join": {
-      const { participantName } = body;
+      const { participantName, userId } = body;
       if (!participantName || typeof participantName !== "string" || participantName.trim().length === 0) {
         return NextResponse.json({ error: "participantName required" }, { status: 400 });
       }
@@ -218,6 +218,23 @@ export async function PATCH(
         }));
         const reactivated = { ...returning, left: false };
         return NextResponse.json({ board: updated, participant: reactivated });
+      }
+
+      // Board owner always auto-admits without requiring approval
+      if (userId && board.ownerId && userId === board.ownerId) {
+        const participant = {
+          id: nanoid(8),
+          name: trimmedName,
+          joinedAt: Date.now(),
+          anonymous: false,
+        };
+        const updated = await updateBoard(id, (b) => ({
+          ...b,
+          participants: [...b.participants, participant],
+          // Become host if there is no current active host
+          hostId: b.hostId ?? participant.id,
+        }));
+        return NextResponse.json({ board: updated, participant });
       }
 
       // First user auto-joins as host

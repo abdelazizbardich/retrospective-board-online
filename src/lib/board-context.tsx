@@ -23,7 +23,7 @@ interface BoardContextValue {
   pendingRequestId: string | null;
   joinRejected: boolean;
   leaveBoard: () => Promise<void>;
-  joinBoard: (name: string) => Promise<void>;
+  joinBoard: (name: string, userId?: string) => Promise<void>;
   approveJoin: (requestId: string) => Promise<void>;
   rejectJoin: (requestId: string) => Promise<void>;
   addCard: (columnId: string, text: string, anonymous?: boolean) => Promise<void>;
@@ -267,8 +267,8 @@ export function BoardProvider({
   );
 
   const joinBoard = useCallback(
-    async (name: string) => {
-      const result = await patchBoard({ action: "join", participantName: name });
+    async (name: string, userId?: string) => {
+      const result = await patchBoard({ action: "join", participantName: name, ...(userId ? { userId } : {}) });
       if (result.pending) {
         // Pending approval — store request ID and wait for host
         setPendingRequestId(result.requestId);

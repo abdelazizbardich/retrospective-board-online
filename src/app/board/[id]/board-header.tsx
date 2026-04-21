@@ -169,7 +169,7 @@ export function BoardHeader() {
         <div className="absolute top-0 left-0 right-0 h-1 overflow-hidden">
           <div
             className={`timer-progress-bar h-full rounded-r-full ${
-              isCritical ? "bg-red-500" : isUrgent ? "bg-orange-400" : "bg-linear-to-r from-indigo-500 to-purple-500"
+              isCritical ? "bg-red-500" : isUrgent ? "bg-orange-400" : "bg-brand-blue-stripe"
             }`}
             style={{ width: `${pct}%` }}
           />
@@ -180,7 +180,7 @@ export function BoardHeader() {
         {/* Logo + board name */}
         <div className="flex items-center gap-2 mr-auto min-w-0">
           <LayoutGrid className="size-4 sm:size-5 text-primary shrink-0" />
-          <h1 className="font-bold text-sm sm:text-base truncate max-w-32 sm:max-w-55 bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="font-bold text-sm sm:text-base truncate max-w-32 sm:max-w-55 text-primary">
             {board.name}
           </h1>
         </div>
@@ -452,7 +452,7 @@ export function BoardHeader() {
                   <div className="hidden sm:block text-left">
                     <div
                       className={`text-sm font-semibold leading-tight ${
-                        isActive ? "bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent" : isDone ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+                        isActive ? "text-primary" : isDone ? "text-brand-green-stripe dark:text-green-400" : "text-muted-foreground"
                       }`}
                     >
                       {phase.label}
@@ -463,7 +463,7 @@ export function BoardHeader() {
                 {idx < PHASES.length - 1 && (
                   <div className="mx-0.5 sm:mx-2 h-0.5 sm:h-1 flex-1 rounded-full bg-muted">
                     <div
-                      className="h-full rounded-full bg-linear-to-r from-green-500 to-green-400 transition-all duration-300"
+                      className="h-full rounded-full bg-brand-green-stripe transition-all duration-300"
                       style={{ width: idx < currentPhaseIdx ? "100%" : "0%" }}
                     />
                   </div>
@@ -474,10 +474,10 @@ export function BoardHeader() {
         </div>
 
         {/* Current phase banner */}
-        <div key={board.phase} className="flex flex-wrap items-center gap-2 sm:gap-3 rounded-xl bg-linear-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 px-3 sm:px-4 py-2.5 animate-fade-in-scale">
+        <div key={board.phase} className="flex flex-wrap items-center gap-2 sm:gap-3 rounded-xl border border-border bg-background/60 px-3 sm:px-4 py-2.5 animate-fade-in-scale">
           <FluentEmoji emoji={currentPhase.emoji} size="3.5rem" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs sm:text-sm font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <p className="text-xs sm:text-sm font-bold text-primary">
               Step {currentPhaseIdx + 1} of {PHASES.length}: {currentPhase.label}
             </p>
             <p className="hidden sm:block text-xs text-muted-foreground">{currentPhase.description}</p>

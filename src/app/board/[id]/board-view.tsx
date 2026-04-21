@@ -106,15 +106,6 @@ export function BoardView() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background relative overflow-hidden">
-      {/* Decorative gradient blobs */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed -top-40 left-1/2 -z-10 h-125 w-200 -translate-x-1/2 rounded-full bg-linear-to-tr from-indigo-400/20 to-purple-400/10 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed bottom-0 right-0 -z-10 h-100 w-150 rounded-full bg-linear-to-tl from-purple-400/15 to-indigo-400/5 blur-3xl"
-      />
       <BoardHeader />
 
       {/* Join toast */}

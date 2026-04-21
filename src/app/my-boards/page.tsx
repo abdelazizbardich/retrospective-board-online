@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useUser } from "@/lib/user-context";
 import {
   LayoutGrid,
@@ -68,16 +69,9 @@ function AuthForm() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background px-6 overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-125 w-175 -translate-x-1/2 rounded-full bg-linear-to-tr from-indigo-400/25 to-purple-400/15 blur-3xl"
-      />
       <div className="w-full max-w-md">
-        <div className="flex items-center gap-2 justify-center mb-8">
-          <LayoutGrid className="size-6 text-primary" />
-          <span className="text-xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            SprintsPlans
-          </span>
+        <div className="flex items-center justify-center mb-8">
+          <Image src="/sprintsplans-logo.png" alt="SprintsPlans" width={160} height={32} className="h-8 w-auto" />
         </div>
 
         <div className="rounded-2xl border border-border bg-background/80 backdrop-blur-sm p-8 shadow-2xl">
@@ -201,9 +195,8 @@ export default function MyBoardsPage() {
       {/* Header */}
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-4">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-            <LayoutGrid className="size-5 text-primary" />
-            SprintsPlans
+          <Link href="/">
+            <Image src="/sprintsplans-logo.png" alt="SprintsPlans" width={140} height={28} className="h-7 w-auto" />
           </Link>
           <div className="flex-1" />
           <div className="flex items-center gap-2">
