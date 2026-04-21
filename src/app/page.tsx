@@ -14,7 +14,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://retroboard.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
 export const metadata: Metadata = {
   title: "Free Online Retrospective Board for Agile Teams",
@@ -200,7 +200,7 @@ export default function Home() {
               <span className="size-3 rounded-full bg-yellow-400" />
               <span className="size-3 rounded-full bg-green-400" />
               <div className="ml-3 flex-1 rounded-md border border-border bg-background/80 px-3 py-1 text-xs text-muted-foreground">
-                sprintsplans.app/room/abc123
+                sprintsplans.com/room/abc123
               </div>
             </div>
             {/* Board title bar */}

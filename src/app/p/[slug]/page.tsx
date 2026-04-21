@@ -5,7 +5,7 @@ import { LayoutGrid } from "lucide-react";
 import DOMPurify from "isomorphic-dompurify";
 import { getPage } from "@/lib/page-store";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://retroboard.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
