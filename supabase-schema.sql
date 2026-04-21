@@ -9,6 +9,30 @@ CREATE TABLE IF NOT EXISTS boards (
   created_at INTEGER NOT NULL,
   data       TEXT    NOT NULL
 );
+-- ─── Navigation Links ────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS nav_links (
+  id              TEXT    PRIMARY KEY,
+  label           TEXT    NOT NULL,
+  href            TEXT    NOT NULL,
+  area            TEXT    NOT NULL CHECK (area IN ('header', 'footer')),
+  position        INTEGER NOT NULL DEFAULT 0,
+  open_in_new_tab BOOLEAN NOT NULL DEFAULT FALSE
+);
+-- ─── Blog Posts ──────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id               TEXT    PRIMARY KEY,
+  slug             TEXT    UNIQUE NOT NULL,
+  title            TEXT    NOT NULL,
+  excerpt          TEXT    NOT NULL DEFAULT '',
+  content          TEXT    NOT NULL DEFAULT '',
+  author           TEXT    NOT NULL DEFAULT '',
+  cover_image      TEXT    NOT NULL DEFAULT '',
+  tags             TEXT    NOT NULL DEFAULT '',
+  meta_description TEXT    NOT NULL DEFAULT '',
+  published        BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at       BIGINT  NOT NULL,
+  updated_at       BIGINT  NOT NULL
+);
 
 -- ─── Pages ───────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS pages (

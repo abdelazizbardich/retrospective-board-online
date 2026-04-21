@@ -10,9 +10,8 @@ import {
   Shield,
   ThumbsUp,
 } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
+import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
@@ -126,33 +125,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
     <div className="flex flex-col min-h-screen">
-      {/* ─── NAVBAR ─── */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/">
-            <Image src="/sprintsplans-logo.png" alt="SprintsPlans" width={160} height={32} className="h-8 w-auto" priority />
-          </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
-            <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/my-boards"
-              className="inline-flex items-center rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              My Boards
-            </Link>
-            <Link
-              href="/create"
-              className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
-            >
-              Get Started
-            </Link>
-          </div>
-        </nav>
-      </header>
+      <SiteHeader />
 
       {/* ─── HERO ─── */}
       <section className="relative overflow-hidden">
@@ -406,22 +379,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── FOOTER ─── */}
-      <footer className="border-t border-border py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
-          <div className="flex items-center">
-            <Image src="/sprintsplans-logo.png" alt="SprintsPlans" width={140} height={28} className="h-7 w-auto" />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            © 2025 SprintsPlans. All rights reserved.
-          </p>
-          <div className="flex gap-6 text-sm text-muted-foreground">
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
     </>
   );

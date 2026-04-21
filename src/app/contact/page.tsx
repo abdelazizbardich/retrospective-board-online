@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { LayoutGrid, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import { SITE_URL, SITE_EMAIL } from "@/lib/config";
 import ContactForm from "./ContactForm";
+import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -13,20 +13,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <LayoutGrid className="size-6 text-primary" />
-            <span>SprintsPlans</span>
-          </Link>
-          <Link
-            href="/create"
-            className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
-          >
-            Get Started
-          </Link>
-        </nav>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Contact Us</h1>
@@ -58,16 +45,7 @@ export default function ContactPage() {
         </div>
       </main>
 
-      <footer className="border-t border-border py-8">
-        <div className="mx-auto max-w-6xl px-6 flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} SprintsPlans. All rights reserved.</p>
-          <div className="flex gap-6">
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link href="/contact" className="hover:text-foreground transition-colors font-medium text-foreground">Contact</Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
