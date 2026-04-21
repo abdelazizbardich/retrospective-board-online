@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LayoutGrid, Mail } from "lucide-react";
 import { SITE_URL, SITE_EMAIL } from "@/lib/config";
+import ContactForm from "./ContactForm";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -53,60 +54,7 @@ export default function ContactPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Fill in the form below and we&apos;ll get back to you as soon as possible.
           </p>
-          <form
-            action={`mailto:${SITE_EMAIL}`}
-            method="GET"
-            className="mt-6 space-y-4"
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  placeholder="Your name"
-                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  placeholder="you@example.com"
-                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Subject</label>
-              <input
-                type="text"
-                name="subject"
-                required
-                placeholder="How can we help?"
-                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Message</label>
-              <textarea
-                name="body"
-                required
-                rows={5}
-                placeholder="Tell us more…"
-                className="w-full resize-none rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </div>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
-            >
-              Send Message
-            </button>
-          </form>
+          <ContactForm />
         </div>
       </main>
 
