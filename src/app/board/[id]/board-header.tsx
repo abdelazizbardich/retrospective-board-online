@@ -441,9 +441,9 @@ export function BoardHeader() {
                   <span
                     className={`flex size-7 sm:size-10 items-center justify-center rounded-full text-xs sm:text-base font-bold transition-all ${
                       isActive
-                        ? "bg-linear-to-br from-indigo-500 to-purple-500 text-white shadow-md ring-2 ring-indigo-500/30"
+                        ? "bg-linear-to-br from-indigo-500 to-purple-500 text-dark shadow-md ring-2 ring-indigo-500/30"
                         : isDone
-                        ? "bg-green-500 text-white"
+                        ? "bg-green-500 text-dark"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
