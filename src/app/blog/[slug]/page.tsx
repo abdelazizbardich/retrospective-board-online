@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Calendar, User, Tag, ArrowLeft } from "lucide-react";
+import { Calendar, User, ArrowLeft } from "lucide-react";
 import DOMPurify from "isomorphic-dompurify";
-import { getBlogPost } from "@/lib/blog-store";
+import { getBlogPost, getRelatedBlogPosts } from "@/lib/blog-store";
+import { getPostCoverImage } from "@/lib/blog-thumbnail";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
+import { BlogCategoryLink } from "@/app/components/blog-category-link";
+import { BlogTagLink } from "@/app/components/blog-tag-link";
+import { BlogPostCard } from "@/app/components/blog-post-card";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
@@ -14,6 +18,7 @@ export async function generateMetadata(
   const { slug } = await params;
   const post = await getBlogPost(slug);
   if (!post?.published) return {};
+  const coverImage = getPostCoverImage(post);
   return {
     title: `${post.title} — SprintsPlans Blog`,
     description: post.metaDescription || post.excerpt || undefined,
@@ -23,7 +28,7 @@ export async function generateMetadata(
       description: post.metaDescription || post.excerpt || undefined,
       url: `${SITE_URL}/blog/${slug}`,
       type: "article",
-      ...(post.coverImage && { images: [{ url: post.coverImage }] }),
+      images: [{ url: coverImage }],
     },
   };
 }
@@ -42,12 +47,16 @@ export default async function BlogPostPage({
     ? post.tags.split(",").map((t) => t.trim()).filter(Boolean)
     : [];
 
+  const coverImage = getPostCoverImage(post);
+  const relatedPosts = await getRelatedBlogPosts(post);
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
 
+      <main className="flex-1">
       {/* Content */}
-      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-16">
+      <div className="mx-auto w-full max-w-3xl px-6 py-16">
         {/* Back link */}
         <Link
           href="/blog"
@@ -58,28 +67,32 @@ export default async function BlogPostPage({
         </Link>
 
         {/* Cover image */}
-        {post.coverImage && (
-          <div className="rounded-2xl overflow-hidden mb-8 aspect-video bg-muted">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={post.coverImage}
-              alt={post.title}
-              className="h-full w-full object-cover"
-            />
-          </div>
+        <div className="rounded-2xl overflow-hidden mb-8 aspect-video bg-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={coverImage}
+            alt={post.title}
+            className="h-full w-full object-cover"
+          />
+        </div>
+
+        {/* Category */}
+        {post.category && (
+          <BlogCategoryLink
+            category={post.category}
+            className="inline-flex items-center gap-1.5 mb-3 text-sm font-semibold uppercase tracking-wide text-primary hover:underline"
+          />
         )}
 
         {/* Tags */}
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {tags.map((tag) => (
-              <span
+              <BlogTagLink
                 key={tag}
-                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
-              >
-                <Tag className="size-3" />
-                {tag}
-              </span>
+                tag={tag}
+                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+              />
             ))}
           </div>
         )}
@@ -110,6 +123,20 @@ export default async function BlogPostPage({
           className="prose prose-neutral dark:prose-invert max-w-none mt-8"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
         />
+      </div>
+
+      {relatedPosts.length > 0 && (
+        <section className="border-t border-border bg-muted/20 px-6 py-16">
+          <div className="mx-auto w-full max-w-5xl">
+            <h2 className="text-2xl font-bold tracking-tight mb-8">Related posts</h2>
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {relatedPosts.map((related) => (
+                <BlogPostCard key={related.id} post={related} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       </main>
 
       <SiteFooter />

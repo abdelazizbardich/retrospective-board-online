@@ -54,6 +54,16 @@ export async function createUser(username: string, password?: string): Promise<A
   return { id, username, hasPassword: !!password, createdAt: now };
 }
 
+export async function getAllUsers(): Promise<AppUser[]> {
+  const { data, error } = await getSupabase()
+    .from("users")
+    .select("id, username, password_hash, password_salt, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as UserRow[]).map(rowToUser);
+}
+
 export async function getUserByUsername(username: string): Promise<AppUser | undefined> {
   const { data, error } = await getSupabase()
     .from("users")

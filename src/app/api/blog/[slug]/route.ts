@@ -50,6 +50,7 @@ export async function PATCH(
       ...(body.excerpt !== undefined         && { excerpt:         String(body.excerpt).trim().slice(0, 500) }),
       ...(body.content !== undefined         && { content:         String(body.content).slice(0, 100000) }),
       ...(body.author !== undefined          && { author:          String(body.author).trim().slice(0, 100) }),
+      ...(body.category !== undefined        && { category:        String(body.category).trim().slice(0, 100) }),
       ...(body.coverImage !== undefined      && { coverImage:      String(body.coverImage).trim().slice(0, 500) }),
       ...(body.tags !== undefined            && { tags:            String(body.tags).trim().slice(0, 300) }),
       ...(body.metaDescription !== undefined && { metaDescription: String(body.metaDescription).trim().slice(0, 300) }),

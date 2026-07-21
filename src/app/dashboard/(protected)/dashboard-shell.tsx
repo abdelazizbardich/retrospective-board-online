@@ -3,13 +3,15 @@
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { BarChart3, LogOut, LayoutDashboard, FileText, BookOpen, Link2 } from "lucide-react";
+import { BarChart3, LogOut, LayoutDashboard, FileText, BookOpen, Link2, Users, FolderOpen } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/boards", label: "Boards", icon: BarChart3, exact: false },
+  { href: "/dashboard/users", label: "Users", icon: Users, exact: false },
   { href: "/dashboard/pages", label: "Pages", icon: FileText, exact: false },
   { href: "/dashboard/blog", label: "Blog", icon: BookOpen, exact: false },
+  { href: "/dashboard/categories", label: "Categories", icon: FolderOpen, exact: false },
   { href: "/dashboard/nav-links", label: "Navigation", icon: Link2, exact: false },
 ];
 
