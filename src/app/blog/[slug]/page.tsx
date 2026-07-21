@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Calendar, User, ArrowLeft } from "lucide-react";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeContent } from "@/lib/sanitize-content";
 import { getBlogPost, getRelatedBlogPosts } from "@/lib/blog-store";
 import { getPostCoverImage } from "@/lib/blog-thumbnail";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
@@ -121,7 +121,7 @@ export default async function BlogPostPage({
         {/* Body */}
         <div
           className="prose prose-neutral dark:prose-invert max-w-none mt-8"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+          dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
         />
       </div>
 

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeContent } from "@/lib/sanitize-content";
 import { getPage } from "@/lib/page-store";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 
@@ -44,7 +44,7 @@ export default async function PublicPage({
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{page.title}</h1>
         <div
           className="prose prose-neutral dark:prose-invert max-w-none mt-8"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.content) }}
+          dangerouslySetInnerHTML={{ __html: sanitizeContent(page.content) }}
         />
       </main>
 
