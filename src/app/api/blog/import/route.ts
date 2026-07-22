@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
         tags: String(row.tags ?? "").trim().slice(0, 300),
         metaDescription: String(row.metaDescription ?? "").trim().slice(0, 300),
         published: row.published === true,
+        scheduledAt: null,
       });
       created.push(slug);
     } catch (error: unknown) {

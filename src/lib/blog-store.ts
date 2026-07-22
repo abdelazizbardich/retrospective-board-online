@@ -13,8 +13,37 @@ export interface BlogPost {
   tags: string; // comma-separated
   metaDescription: string;
   published: boolean;
+  scheduledAt: number | null;
   createdAt: number;
   updatedAt: number;
+}
+
+export function resolveBlogPublishState(input: {
+  published?: boolean;
+  scheduledAt?: number | null;
+}): Pick<BlogPost, "published" | "scheduledAt"> {
+  const scheduledAt =
+    input.scheduledAt != null && Number.isFinite(input.scheduledAt)
+      ? Math.floor(input.scheduledAt)
+      : null;
+
+  if (scheduledAt != null && scheduledAt > Date.now()) {
+    return { published: false, scheduledAt };
+  }
+
+  if (input.published === true) {
+    return { published: true, scheduledAt: null };
+  }
+
+  return { published: false, scheduledAt: null };
+}
+
+export type BlogPostStatus = "published" | "scheduled" | "draft";
+
+export function getBlogPostStatus(post: BlogPost): BlogPostStatus {
+  if (post.published) return "published";
+  if (post.scheduledAt != null && post.scheduledAt > Date.now()) return "scheduled";
+  return "draft";
 }
 
 // ── Row → domain converter ─────────────────────────────────────────────────
@@ -31,6 +60,7 @@ type BlogPostRow = {
   tags: string;
   meta_description: string;
   published: boolean;
+  scheduled_at: number | null;
   created_at: number;
   updated_at: number;
 };
@@ -48,6 +78,7 @@ function rowToPost(row: BlogPostRow): BlogPost {
     tags: row.tags,
     metaDescription: row.meta_description,
     published: row.published,
+    scheduledAt: row.scheduled_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -291,6 +322,7 @@ export async function createBlogPost(
     tags: data.tags,
     meta_description: data.metaDescription,
     published: data.published,
+    scheduled_at: data.scheduledAt ?? null,
     created_at: now,
     updated_at: now,
   });
@@ -315,6 +347,8 @@ export async function updateBlogPost(
   if (patch.tags !== undefined)            updates.tags             = patch.tags;
   if (patch.metaDescription !== undefined) updates.meta_description = patch.metaDescription;
   if (patch.published !== undefined)       updates.published        = patch.published;
+  if (patch.scheduledAt !== undefined)    updates.scheduled_at     = patch.scheduledAt;
+  if (patch.published === true)            updates.scheduled_at     = null;
 
   const { error } = await getSupabase().from("blog_posts").update(updates).eq("slug", slug);
   if (error) throw new Error(error.message);
@@ -350,8 +384,23 @@ export async function updateBlogPostsPublished(slugs: string[], published: boole
 
   const { error, count } = await getSupabase()
     .from("blog_posts")
-    .update({ published, updated_at: Date.now() }, { count: "exact" })
+    .update({ published, scheduled_at: null, updated_at: Date.now() }, { count: "exact" })
     .in("slug", slugs);
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+/** Publish posts whose scheduled_at time has passed. Called by cron. */
+export async function publishDueBlogPosts(): Promise<number> {
+  const now = Date.now();
+
+  const { error, count } = await getSupabase()
+    .from("blog_posts")
+    .update({ published: true, scheduled_at: null, updated_at: now }, { count: "exact" })
+    .eq("published", false)
+    .not("scheduled_at", "is", null)
+    .lte("scheduled_at", now);
 
   if (error) throw new Error(error.message);
   return count ?? 0;

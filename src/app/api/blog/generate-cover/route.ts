@@ -6,12 +6,13 @@ import { requireAdmin } from "@/app/api/admin/auth/route";
 function buildCoverPrompt(title: string, excerpt: string): string {
   const parts = [
     `Professional blog cover image for an article titled "${title}".`,
+    "Modern, clean, visually striking editorial illustration. Suitable as a website blog header.",
   ];
   if (excerpt) {
-    parts.push(excerpt);
+    parts.push(`Visual theme inspired by: ${excerpt}. Do not render this as text.`);
   }
   parts.push(
-    "Modern, clean, visually striking editorial illustration. Suitable as a website blog header. No text, no watermarks, no logos.",
+    `Text rules: no text, labels, captions, subtitles, watermarks, or logos. If text must appear, render only the exact title verbatim: "${title}". Do not paraphrase, abbreviate, or add any other words.`,
   );
   return parts.join(" ");
 }

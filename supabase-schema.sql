@@ -40,12 +40,14 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   tags             TEXT    NOT NULL DEFAULT '',
   meta_description TEXT    NOT NULL DEFAULT '',
   published        BOOLEAN NOT NULL DEFAULT FALSE,
+  scheduled_at     BIGINT,
   created_at       BIGINT  NOT NULL,
   updated_at       BIGINT  NOT NULL
 );
 
 -- Existing DBs:
 -- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS scheduled_at BIGINT;
 
 -- ─── Pages ───────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS pages (

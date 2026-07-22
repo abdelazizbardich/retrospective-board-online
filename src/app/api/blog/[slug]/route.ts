@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getBlogPost, updateBlogPost, deleteBlogPost } from "@/lib/blog-store";
+import { getBlogPost, updateBlogPost, deleteBlogPost, resolveBlogPublishState } from "@/lib/blog-store";
 import { requireAdmin } from "@/app/api/admin/auth/route";
 
 export async function GET(
@@ -44,6 +44,32 @@ export async function PATCH(
   }
 
   try {
+    const hasPublishFields = body.published !== undefined || body.scheduledAt !== undefined;
+    const publishState = hasPublishFields
+      ? resolveBlogPublishState({
+          published:
+            body.published !== undefined ? body.published === true : post.published,
+          scheduledAt:
+            body.scheduledAt !== undefined
+              ? body.scheduledAt == null
+                ? null
+                : Number(body.scheduledAt)
+              : post.scheduledAt,
+        })
+      : null;
+
+    if (
+      body.scheduledAt != null &&
+      publishState &&
+      publishState.scheduledAt == null &&
+      body.published !== true
+    ) {
+      return NextResponse.json(
+        { error: "scheduledAt must be a future date and time" },
+        { status: 400 }
+      );
+    }
+
     const updated = await updateBlogPost(slug, {
       ...(body.title !== undefined           && { title:           String(body.title).trim().slice(0, 200) }),
       ...(body.slug !== undefined            && { slug:            String(body.slug).trim().slice(0, 100) }),
@@ -54,7 +80,10 @@ export async function PATCH(
       ...(body.coverImage !== undefined      && { coverImage:      String(body.coverImage).trim().slice(0, 500) }),
       ...(body.tags !== undefined            && { tags:            String(body.tags).trim().slice(0, 300) }),
       ...(body.metaDescription !== undefined && { metaDescription: String(body.metaDescription).trim().slice(0, 300) }),
-      ...(body.published !== undefined       && { published:       body.published === true }),
+      ...(publishState && {
+        published: publishState.published,
+        scheduledAt: publishState.scheduledAt,
+      }),
     });
     return NextResponse.json(updated);
   } catch (error: unknown) {

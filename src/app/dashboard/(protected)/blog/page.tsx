@@ -11,7 +11,7 @@ import {
 } from "@/lib/import-blog";
 import { isPhantomLocalCoverPath } from "@/lib/blog-thumbnail";
 import {
-  Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink, X, Save, RefreshCw, Upload, Download, FileSpreadsheet, ImageIcon, Sparkles,
+  Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink, X, Save, RefreshCw, Upload, Download, FileSpreadsheet, ImageIcon, Sparkles, Clock,
 } from "lucide-react";
 
 interface BlogPost {
@@ -26,8 +26,29 @@ interface BlogPost {
   tags: string;
   metaDescription: string;
   published: boolean;
+  scheduledAt: number | null;
   createdAt: number;
   updatedAt: number;
+}
+
+type PublishMode = "draft" | "now" | "schedule";
+
+function toDatetimeLocalValue(timestamp: number): string {
+  const date = new Date(timestamp);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function getPublishMode(post: BlogPost): PublishMode {
+  if (post.published) return "now";
+  if (post.scheduledAt != null && post.scheduledAt > Date.now()) return "schedule";
+  return "draft";
+}
+
+function getPostStatus(post: BlogPost): "published" | "scheduled" | "draft" {
+  if (post.published) return "published";
+  if (post.scheduledAt != null && post.scheduledAt > Date.now()) return "scheduled";
+  return "draft";
 }
 
 interface BlogCategory {
@@ -45,7 +66,8 @@ const EMPTY = {
   coverImage: "",
   tags: "",
   metaDescription: "",
-  published: false,
+  publishMode: "draft" as PublishMode,
+  scheduledAtLocal: "",
 };
 
 function slugify(str: string) {
@@ -121,7 +143,11 @@ export default function BlogAdminPage() {
       coverImage: isPhantomLocalCoverPath(post.coverImage) ? "" : post.coverImage,
       tags: post.tags,
       metaDescription: post.metaDescription,
-      published: post.published,
+      publishMode: getPublishMode(post),
+      scheduledAtLocal:
+        post.scheduledAt != null && post.scheduledAt > Date.now()
+          ? toDatetimeLocalValue(post.scheduledAt)
+          : "",
     });
     setCoverUploadError("");
     setCoverGenerating(false);
@@ -213,17 +239,38 @@ export default function BlogAdminPage() {
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
+
+    let published = false;
+    let scheduledAt: number | null = null;
+
+    if (form.publishMode === "now") {
+      published = true;
+    } else if (form.publishMode === "schedule") {
+      if (!form.scheduledAtLocal) {
+        alert("Pick a publish date and time");
+        return;
+      }
+      scheduledAt = new Date(form.scheduledAtLocal).getTime();
+      if (!Number.isFinite(scheduledAt) || scheduledAt <= Date.now()) {
+        alert("Schedule time must be in the future");
+        return;
+      }
+    }
+
+    const { publishMode: _publishMode, scheduledAtLocal: _scheduledAtLocal, ...rest } = form;
+    const payload = { ...rest, published, scheduledAt };
+
     setSaving(true);
     const res = isNew
       ? await fetch("/api/blog", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         })
       : await fetch(`/api/blog/${editing!.slug}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         });
     if (res.ok) { closeForm(); setRefreshKey((k) => k + 1); }
     else {
@@ -260,8 +307,8 @@ export default function BlogAdminPage() {
   };
 
   const selectedPosts = posts.filter((p) => selectedSlugs.has(p.slug));
-  const selectedDraftCount = selectedPosts.filter((p) => !p.published).length;
-  const selectedPublishedCount = selectedPosts.filter((p) => p.published).length;
+  const selectedDraftCount = selectedPosts.filter((p) => getPostStatus(p) !== "published").length;
+  const selectedPublishedCount = selectedPosts.filter((p) => getPostStatus(p) === "published").length;
 
   const handleBulkPublish = async (published: boolean) => {
     const count = selectedSlugs.size;
@@ -318,10 +365,11 @@ export default function BlogAdminPage() {
   };
 
   const handleTogglePublish = async (post: BlogPost) => {
+    const willPublish = getPostStatus(post) !== "published";
     await fetch(`/api/blog/${post.slug}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ published: !post.published }),
+      body: JSON.stringify({ published: willPublish, scheduledAt: null }),
     });
     setRefreshKey((k) => k + 1);
   };
@@ -537,16 +585,38 @@ export default function BlogAdminPage() {
                     <p className="text-xs text-muted-foreground font-mono mt-0.5">/blog/{post.slug}</p>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                        post.published
-                          ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {post.published ? <Eye className="size-3" /> : <EyeOff className="size-3" />}
-                      {post.published ? "Published" : "Draft"}
-                    </span>
+                    {(() => {
+                      const status = getPostStatus(post);
+                      return (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                            status === "published"
+                              ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                              : status === "scheduled"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400"
+                                : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {status === "published" ? (
+                            <Eye className="size-3" />
+                          ) : status === "scheduled" ? (
+                            <Clock className="size-3" />
+                          ) : (
+                            <EyeOff className="size-3" />
+                          )}
+                          {status === "published"
+                            ? "Published"
+                            : status === "scheduled"
+                              ? `Scheduled ${new Date(post.scheduledAt!).toLocaleString(undefined, {
+                                  day: "numeric",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}`
+                              : "Draft"}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell text-xs">
                     {post.category || <span className="italic">—</span>}
@@ -577,7 +647,7 @@ export default function BlogAdminPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1.5">
-                      {post.published && (
+                      {getPostStatus(post) === "published" && (
                         <Link
                           href={`/blog/${post.slug}`}
                           target="_blank"
@@ -590,9 +660,9 @@ export default function BlogAdminPage() {
                       <button
                         onClick={() => handleTogglePublish(post)}
                         className="flex size-7 items-center justify-center rounded-lg border border-border hover:border-primary/40 hover:text-primary transition-colors"
-                        title={post.published ? "Unpublish" : "Publish"}
+                        title={getPostStatus(post) === "published" ? "Unpublish" : "Publish now"}
                       >
-                        {post.published ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                        {getPostStatus(post) === "published" ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                       </button>
                       <button
                         onClick={() => openEdit(post)}
@@ -842,20 +912,46 @@ export default function BlogAdminPage() {
                 />
               </div>
 
-              {/* Published toggle */}
-              <label className="flex items-center gap-3 cursor-pointer select-none">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={form.published}
-                    onChange={(e) => setForm((f) => ({ ...f, published: e.target.checked }))}
-                  />
-                  <div className="h-5 w-9 rounded-full bg-muted peer-checked:bg-primary transition-colors" />
-                  <div className="absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
+              {/* Publish options */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium">Publishing</label>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["draft", "Draft"],
+                    ["now", "Publish now"],
+                    ["schedule", "Schedule"],
+                  ] as const).map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, publishMode: mode }))}
+                      className={`rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                        form.publishMode === mode
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border hover:border-primary/40"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
-                <span className="text-sm font-medium">Published</span>
-              </label>
+                {form.publishMode === "schedule" && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Publish at</label>
+                    <input
+                      type="datetime-local"
+                      value={form.scheduledAtLocal}
+                      min={toDatetimeLocalValue(Date.now() + 60_000)}
+                      onChange={(e) => setForm((f) => ({ ...f, scheduledAtLocal: e.target.value }))}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      required
+                    />
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      The post will go live automatically at the chosen time.
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Actions */}
               <div className="flex justify-end gap-2 pt-2">
