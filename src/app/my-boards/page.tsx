@@ -175,9 +175,17 @@ export default function MyBoardsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this board? This cannot be undone.")) return;
     setDeletingId(id);
-    await fetch(`/api/boards/${id}`, { method: "DELETE" });
-    setBoards((prev) => prev.filter((b) => b.id !== id));
-    setDeletingId(null);
+    try {
+      const res = await fetch(`/api/boards/${id}?userId=${user.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert((data as { error?: string }).error ?? "Failed to delete board");
+        return;
+      }
+      setBoards((prev) => prev.filter((b) => b.id !== id));
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Not yet loaded

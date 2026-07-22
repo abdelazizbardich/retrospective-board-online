@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getBoard, updateBoard } from "@/lib/board-store";
+import { deleteBoard, getBoard, updateBoard } from "@/lib/board-store";
 import { nanoid } from "nanoid";
 import type { BoardPhase } from "@/lib/types";
 
@@ -623,4 +623,24 @@ export async function PATCH(
     default:
       return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const userId = request.nextUrl.searchParams.get("userId");
+
+  const board = await getBoard(id);
+  if (!board) {
+    return NextResponse.json({ error: "Board not found" }, { status: 404 });
+  }
+
+  if (!userId || !board.ownerId || board.ownerId !== userId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  await deleteBoard(id);
+  return NextResponse.json({ ok: true });
 }
