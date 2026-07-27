@@ -60,11 +60,13 @@ export function blogPostingSchema(post: BlogPost) {
       ? {
           "@type": "Person",
           name: post.author,
+          url: `${SITE_URL}/blog`,
         }
       : undefined,
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
+      url: SITE_URL,
       logo: {
         "@type": "ImageObject",
         url: toAbsoluteUrl("/sprintsplans-logo.png"),
