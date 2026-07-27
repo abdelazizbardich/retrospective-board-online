@@ -9,6 +9,8 @@ import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 import { BlogCategoryLink } from "@/app/components/blog-category-link";
 import { BlogTagLink } from "@/app/components/blog-tag-link";
 import { BlogPostCard } from "@/app/components/blog-post-card";
+import { JsonLd } from "@/components/json-ld";
+import { blogPostingSchema } from "@/lib/structured-data";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
@@ -52,6 +54,7 @@ export default async function BlogPostPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <JsonLd data={blogPostingSchema(post)} />
       <SiteHeader />
 
       <main className="flex-1">

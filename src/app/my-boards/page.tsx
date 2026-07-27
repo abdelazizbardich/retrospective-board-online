@@ -173,6 +173,7 @@ export default function MyBoardsPage() {
   }, [user]);
 
   const handleDelete = async (id: string) => {
+    if (!user) return;
     if (!confirm("Delete this board? This cannot be undone.")) return;
     setDeletingId(id);
     try {
