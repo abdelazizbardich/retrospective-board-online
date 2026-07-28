@@ -15,7 +15,7 @@ export interface ImportedBlogPost {
   published: boolean;
 }
 
-const HEADER_ALIASES: Record<keyof Omit<ImportedBlogPost, "published"> | "published", string[]> = {
+const HEADER_ALIASES: Record<keyof Omit<ImportedBlogPost, "published">, string[]> = {
   title: ["title", "post title", "name"],
   slug: ["slug", "url", "permalink"],
   excerpt: ["excerpt", "summary", "description"],
@@ -25,7 +25,6 @@ const HEADER_ALIASES: Record<keyof Omit<ImportedBlogPost, "published"> | "publis
   coverImage: ["coverimage", "cover_image", "cover image", "image", "cover"],
   tags: ["tags", "tag", "keywords"],
   metaDescription: ["metadescription", "meta_description", "meta description", "seo", "seo description"],
-  published: ["published", "publish", "status", "is published"],
 };
 
 function normalizeHeader(value: unknown): string {
@@ -38,13 +37,6 @@ function normalizeHeader(value: unknown): string {
 function cellString(value: unknown): string {
   if (value == null) return "";
   return String(value).trim();
-}
-
-function parsePublished(value: unknown): boolean {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "number") return value === 1;
-  const raw = cellString(value).toLowerCase();
-  return ["true", "yes", "y", "1", "published", "publish"].includes(raw);
 }
 
 /** Convert markdown (or plain text) to HTML. Leaves existing HTML unchanged. */
@@ -266,7 +258,7 @@ export async function parseBlogExcelFile(file: File): Promise<ImportedBlogPost[]
       }),
       tags: (col.tags !== undefined ? cellString(row[col.tags]) : "").slice(0, 300),
       metaDescription: (col.metaDescription !== undefined ? cellString(row[col.metaDescription]) : "").slice(0, 300),
-      published: col.published !== undefined ? parsePublished(row[col.published]) : false,
+      published: false,
     });
   }
 
@@ -286,7 +278,6 @@ export async function downloadBlogImportTemplate(): Promise<void> {
       "coverImage",
       "tags",
       "metaDescription",
-      "published",
     ],
     [
       "How to Run a Great Retro",
@@ -298,7 +289,6 @@ export async function downloadBlogImportTemplate(): Promise<void> {
       "https://example.com/cover.jpg",
       "agile, retro, teams",
       "Learn how to facilitate effective sprint retrospectives.",
-      "false",
     ],
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);

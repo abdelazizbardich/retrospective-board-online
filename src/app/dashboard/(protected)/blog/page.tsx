@@ -997,7 +997,8 @@ export default function BlogAdminPage() {
             <div className="p-6 space-y-5">
               <p className="text-sm text-muted-foreground">
                 Upload an .xlsx or .xls file with columns for title and content.
-                Optional: slug, excerpt, author, category, coverImage, tags, metaDescription, published.
+                Optional: slug, excerpt, author, category, coverImage, tags, metaDescription.
+                Imported posts are saved as drafts — publish them from the dashboard when ready.
                 Mentions of other post titles are auto-linked to <code className="text-xs">/blog/…</code> during import.
                 <strong>SprintsPlans</strong> is linked to <code className="text-xs">https://sprintsplans.com</code>.
                 Missing cover images use the first image in content, or a generated thumbnail.

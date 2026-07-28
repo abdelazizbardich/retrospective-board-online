@@ -17,7 +17,6 @@ type ImportRow = {
   coverImage?: unknown;
   tags?: unknown;
   metaDescription?: unknown;
-  published?: unknown;
 };
 
 export async function POST(request: NextRequest) {
@@ -100,7 +99,7 @@ export async function POST(request: NextRequest) {
         coverImage,
         tags: String(row.tags ?? "").trim().slice(0, 300),
         metaDescription: String(row.metaDescription ?? "").trim().slice(0, 300),
-        published: row.published === true,
+        published: false,
         scheduledAt: null,
       });
       created.push(slug);
