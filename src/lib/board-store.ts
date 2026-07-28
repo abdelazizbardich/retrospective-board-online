@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import type { Board, Column } from "./types";
-import { BOARD_TEMPLATES } from "./types";
+import { BOARD_TEMPLATES, DEFAULT_TIMER_SECONDS } from "./types";
 import { getSupabase } from "./db";
 
 export async function createBoard(name: string, templateId: string, ownerId?: string): Promise<Board> {
@@ -20,11 +20,13 @@ export async function createBoard(name: string, templateId: string, ownerId?: st
     id: boardId,
     name,
     createdAt: Date.now(),
+    templateId: template.id,
+    ...(template.layout ? { layout: template.layout } : {}),
     columns,
     participants: [],
     pendingJoinRequests: [],
     hostId: null,
-    timer: { running: false, remaining: 300, total: 300 },
+    timer: { running: false, remaining: DEFAULT_TIMER_SECONDS, total: DEFAULT_TIMER_SECONDS },
     phase: "writing",
     maxVotesPerUser: 5,
     messages: [],
@@ -134,7 +136,7 @@ export async function createBoardFromImport(
     participants: [],
     pendingJoinRequests: [],
     hostId: null,
-    timer: { running: false, remaining: 300, total: 300 },
+    timer: { running: false, remaining: DEFAULT_TIMER_SECONDS, total: DEFAULT_TIMER_SECONDS },
     phase: "writing",
     maxVotesPerUser: 5,
     messages: [],

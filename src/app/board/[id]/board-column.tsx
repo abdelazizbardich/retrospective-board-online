@@ -20,11 +20,12 @@ import {
 import { FluentEmoji } from "@/lib/fluent-emoji";
 import EmojiPicker, { type EmojiClickData, Theme } from "emoji-picker-react";
 
-const COLOR_MAP: Record<string, { border: string; bg: string; bodyBg: string; title: string; cardBg: string; cardStripe: string; accent: string; countBg: string }> = {
+const COLOR_MAP: Record<string, { border: string; bg: string; bodyBg: string; wedgeBg: string; title: string; cardBg: string; cardStripe: string; accent: string; countBg: string }> = {
   green: {
     border: "border-brand-green-light",
     bg: "brand-green-bg",
     bodyBg: "brand-green-bg-body",
+    wedgeBg: "starfish-wedge-green",
     title: "brand-green-title",
     cardBg: "bg-white dark:bg-zinc-900",
     cardStripe: "brand-green-stripe",
@@ -35,6 +36,7 @@ const COLOR_MAP: Record<string, { border: string; bg: string; bodyBg: string; ti
     border: "border-red-200 dark:border-red-900",
     bg: "bg-red-50 dark:bg-red-950/40",
     bodyBg: "bg-red-50/40 dark:bg-red-950/10",
+    wedgeBg: "starfish-wedge-red",
     title: "text-red-700 dark:text-red-400",
     cardBg: "bg-white dark:bg-zinc-900",
     cardStripe: "bg-red-400 dark:bg-red-500",
@@ -45,6 +47,7 @@ const COLOR_MAP: Record<string, { border: string; bg: string; bodyBg: string; ti
     border: "border-brand-blue-light",
     bg: "brand-blue-bg",
     bodyBg: "brand-blue-bg-body",
+    wedgeBg: "starfish-wedge-blue",
     title: "brand-blue-title",
     cardBg: "bg-white dark:bg-zinc-900",
     cardStripe: "brand-blue-stripe",
@@ -55,6 +58,7 @@ const COLOR_MAP: Record<string, { border: string; bg: string; bodyBg: string; ti
     border: "border-brand-yellow-light",
     bg: "brand-yellow-bg",
     bodyBg: "brand-yellow-bg-body",
+    wedgeBg: "starfish-wedge-yellow",
     title: "brand-yellow-title",
     cardBg: "bg-white dark:bg-zinc-900",
     cardStripe: "brand-yellow-stripe",
@@ -65,6 +69,7 @@ const COLOR_MAP: Record<string, { border: string; bg: string; bodyBg: string; ti
     border: "border-brand-purple-light",
     bg: "brand-purple-bg",
     bodyBg: "brand-purple-bg-body",
+    wedgeBg: "starfish-wedge-purple",
     title: "brand-purple-title",
     cardBg: "bg-white dark:bg-zinc-900",
     cardStripe: "brand-purple-stripe",
@@ -72,6 +77,12 @@ const COLOR_MAP: Record<string, { border: string; bg: string; bodyBg: string; ti
     countBg: "brand-purple-count brand-purple-title",
   },
 };
+
+export type ColumnColorStyles = (typeof COLOR_MAP)[string];
+
+export function getColumnColors(color: string): ColumnColorStyles {
+  return COLOR_MAP[color] || COLOR_MAP.blue;
+}
 
 const AVAILABLE_COLORS = [
   { key: "green", label: "Green" },
@@ -100,9 +111,11 @@ export function BoardColumn({ column, index, total }: { column: Column; index: n
     () => board?.participants.find((p) => p.id === participant?.id)?.anonymous ?? false
   );
 
-  const colors = COLOR_MAP[column.color] || COLOR_MAP.blue;
+  const colors = getColumnColors(column.color);
   const isWritePhase = board?.phase === "writing";
+  const isGroupingPhase = board?.phase === "grouping";
   const isDone = board?.phase === "done";
+  const canAcceptDrop = !isDone && !!participant && (isHost || isGroupingPhase);
 
   // Sort cards by votes in voting/discussing/done phase
   const sortedCards =
@@ -164,9 +177,9 @@ export function BoardColumn({ column, index, total }: { column: Column; index: n
       className={`flex min-w-75 w-full flex-1 flex-col rounded-xl overflow-hidden bg-background border ${colors.border} shadow-md transition-all animate-fade-in-scale relative hover:z-50 ${
         dragOver ? "ring-2 ring-primary/40 shadow-lg shadow-primary/10 scale-[1.01]" : "hover:shadow-lg"
       }`}
-      onDragOver={isDone || !isHost ? undefined : handleDragOver}
-      onDragLeave={isDone || !isHost ? undefined : handleDragLeave}
-      onDrop={isDone || !isHost ? undefined : handleDrop}
+      onDragOver={canAcceptDrop ? handleDragOver : undefined}
+      onDragLeave={canAcceptDrop ? handleDragLeave : undefined}
+      onDrop={canAcceptDrop ? handleDrop : undefined}
     >
       {/* Column header bar */}
       {editingColumn && !isDone && isHost ? (
@@ -434,7 +447,7 @@ export function BoardColumn({ column, index, total }: { column: Column; index: n
 
 const REACTION_EMOJIS = ["😢", "😄", "😮", "😡", "😜"];
 
-function CardItem({
+export function CardItem({
   card,
   columnId,
   colors,

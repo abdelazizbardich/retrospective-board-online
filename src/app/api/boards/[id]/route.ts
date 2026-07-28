@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteBoard, getBoard, updateBoard } from "@/lib/board-store";
+import { applyTemplateLayoutOnly, applyTemplateToBoard } from "@/lib/apply-board-template";
+import { BOARD_TEMPLATES } from "@/lib/types";
 import { nanoid } from "nanoid";
 import type { BoardPhase } from "@/lib/types";
 
@@ -194,6 +196,24 @@ export async function PATCH(
       return NextResponse.json(updated);
     }
 
+    case "change-template": {
+      const { templateId, preserveSections } = body;
+      if (!templateId || typeof templateId !== "string") {
+        return NextResponse.json({ error: "templateId required" }, { status: 400 });
+      }
+      const template = BOARD_TEMPLATES.find((t) => t.id === templateId);
+      if (!template) {
+        return NextResponse.json({ error: "Invalid template" }, { status: 400 });
+      }
+      const updated = await updateBoard(id, (b) => ({
+        ...b,
+        ...(preserveSections === true
+          ? applyTemplateLayoutOnly(template)
+          : applyTemplateToBoard(b, template)),
+      }));
+      return NextResponse.json(updated);
+    }
+
     case "join": {
       const { participantName, userId } = body;
       if (!participantName || typeof participantName !== "string" || participantName.trim().length === 0) {
@@ -204,35 +224,85 @@ export async function PATCH(
       }
 
       const trimmedName = participantName.trim();
+      const isOwner = !!(userId && board.ownerId && userId === board.ownerId);
 
-      // Check if a participant with the same name previously left — allow them to rejoin
-      const returning = board.participants.find(
+      // Already joined with this account — return existing session, reclaim host if owner
+      if (userId) {
+        const active = board.participants.find((p) => !p.left && p.userId === userId);
+        if (active) {
+          if (isOwner && board.hostId !== active.id) {
+            const updated = await updateBoard(id, (b) => ({ ...b, hostId: active.id }));
+            return NextResponse.json({ board: updated, participant: active });
+          }
+          return NextResponse.json({ board, participant: active });
+        }
+      }
+
+      // Returning participant who left (by account first, then by name)
+      if (userId) {
+        const returningByUser = board.participants.find((p) => p.left && p.userId === userId);
+        if (returningByUser) {
+          const reactivated = { ...returningByUser, left: false, name: trimmedName };
+          const updated = await updateBoard(id, (b) => ({
+            ...b,
+            participants: b.participants.map((p) =>
+              p.id === returningByUser.id ? reactivated : p
+            ),
+            hostId: isOwner ? returningByUser.id : b.hostId,
+          }));
+          return NextResponse.json({ board: updated, participant: reactivated });
+        }
+      }
+
+      const returningByName = board.participants.find(
         (p) => p.left && p.name.toLowerCase() === trimmedName.toLowerCase()
       );
-      if (returning) {
+      if (returningByName) {
+        const reactivated = {
+          ...returningByName,
+          left: false,
+          ...(userId ? { userId } : {}),
+        };
         const updated = await updateBoard(id, (b) => ({
           ...b,
           participants: b.participants.map((p) =>
-            p.id === returning.id ? { ...p, left: false } : p
+            p.id === returningByName.id ? reactivated : p
           ),
+          hostId: isOwner ? returningByName.id : b.hostId,
         }));
-        const reactivated = { ...returning, left: false };
         return NextResponse.json({ board: updated, participant: reactivated });
       }
 
-      // Board owner always auto-admits without requiring approval
-      if (userId && board.ownerId && userId === board.ownerId) {
+      // Board owner always joins as host (even if someone else joined first)
+      if (isOwner) {
+        // Upgrade a same-name guest session to the owner's account instead of duplicating
+        const orphanGuest = board.participants.find(
+          (p) =>
+            !p.left &&
+            !p.userId &&
+            p.name.toLowerCase() === trimmedName.toLowerCase()
+        );
+        if (orphanGuest) {
+          const upgraded = { ...orphanGuest, userId };
+          const updated = await updateBoard(id, (b) => ({
+            ...b,
+            participants: b.participants.map((p) => (p.id === orphanGuest.id ? upgraded : p)),
+            hostId: orphanGuest.id,
+          }));
+          return NextResponse.json({ board: updated, participant: upgraded });
+        }
+
         const participant = {
           id: nanoid(8),
           name: trimmedName,
           joinedAt: Date.now(),
           anonymous: false,
+          userId,
         };
         const updated = await updateBoard(id, (b) => ({
           ...b,
           participants: [...b.participants, participant],
-          // Become host if there is no current active host
-          hostId: b.hostId ?? participant.id,
+          hostId: participant.id,
         }));
         return NextResponse.json({ board: updated, participant });
       }
@@ -244,6 +314,7 @@ export async function PATCH(
           name: trimmedName,
           joinedAt: Date.now(),
           anonymous: false,
+          ...(userId ? { userId } : {}),
         };
         const updated = await updateBoard(id, (b) => ({
           ...b,

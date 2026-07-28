@@ -9,9 +9,17 @@ import {
   Timer,
   Shield,
   ThumbsUp,
+  Sparkles,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
+import { StarfishTemplatePreview } from "@/app/create/starfish-template-preview";
+import { getWedgeFillColor } from "@/app/board/[id]/starfish-geometry";
+import { BOARD_TEMPLATES } from "@/lib/types";
+
+function templateHref(id: string) {
+  return id === "starfish" ? "/templates/starfish" : `/create?template=${id}`;
+}
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
@@ -243,6 +251,71 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── TEMPLATES ─── */}
+      <section className="border-t border-border bg-gradient-to-br from-primary/5 via-background to-[#2b48a9]/5 py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-10 text-center">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Retrospective Templates
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-muted-foreground leading-relaxed">
+              Pick a format that fits your team — from classic three-column boards to the radial
+              Starfish layout.
+            </p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {BOARD_TEMPLATES.map((template) => (
+              <div
+                key={template.id}
+                className="flex flex-col rounded-2xl border border-primary/20 bg-background p-6 shadow-sm"
+              >
+                {template.id === "starfish" && (
+                  <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                    <Sparkles className="size-3.5" />
+                    New
+                  </div>
+                )}
+                <div
+                  className={`mb-4 ${template.layout === "radial" ? "flex justify-center" : "flex flex-wrap gap-2 text-2xl"}`}
+                >
+                  {template.layout === "radial" ? (
+                    <StarfishTemplatePreview />
+                  ) : (
+                    template.columns.map((col) => (
+                      <span key={col.title} title={col.title}>
+                        {col.emoji}
+                      </span>
+                    ))
+                  )}
+                </div>
+                <h3 className="text-lg font-bold tracking-tight">{template.name}</h3>
+                <p className="mt-2 flex-1 text-sm text-muted-foreground leading-relaxed">
+                  {template.description}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-1.5 text-xs font-bold uppercase tracking-wide">
+                  {template.columns.map((col) => (
+                    <span
+                      key={col.title}
+                      className="rounded-lg px-2.5 py-1.5"
+                      style={{ backgroundColor: getWedgeFillColor(col.color) }}
+                    >
+                      {col.title}
+                    </span>
+                  ))}
+                </div>
+                <a
+                  href={templateHref(template.id)}
+                  className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-80 transition-opacity"
+                >
+                  {template.id === "starfish" ? "Explore Starfish" : "Use template"}
+                  <ArrowRight className="size-4" />
+                </a>
+              </div>
+            ))}
           </div>
         </div>
       </section>

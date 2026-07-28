@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { BOARD_TEMPLATES } from "@/lib/types";
 import { FluentEmoji } from "@/lib/fluent-emoji";
+import { StarfishTemplatePreview } from "./starfish-template-preview";
 import { useUser } from "@/lib/user-context";
 import {
   ArrowLeft,
@@ -70,6 +71,19 @@ async function parseExcelFile(file: File): Promise<ImportedColumn[]> {
     if (cards.length > 0) result.push({ title: sheetName, cards });
   }
   return result;
+}
+
+function TemplateFromUrl({ onSelect }: { onSelect: (id: string) => void }) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const templateId = searchParams.get("template");
+    if (templateId && BOARD_TEMPLATES.some((t) => t.id === templateId)) {
+      onSelect(templateId);
+    }
+  }, [searchParams, onSelect]);
+
+  return null;
 }
 
 export default function CreateBoardPage() {
@@ -215,6 +229,9 @@ export default function CreateBoardPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Suspense fallback={null}>
+        <TemplateFromUrl onSelect={setSelectedTemplate} />
+      </Suspense>
       {/* Header */}
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center gap-4 px-6 py-4">
@@ -384,10 +401,14 @@ export default function CreateBoardPage() {
                     {selectedTemplate === template.id && (
                       <CheckCircle2 className="absolute right-3 top-3 size-5 text-primary" />
                     )}
-                    <div className="mb-2 flex gap-1.5 items-center">
-                      {template.columns.map((col) => (
-                        <FluentEmoji key={col.title} emoji={col.emoji} size="1.5rem" />
-                      ))}
+                    <div className={`mb-3 ${template.layout === "radial" ? "flex justify-center px-2" : "flex gap-1.5 items-center"}`}>
+                      {template.layout === "radial" ? (
+                        <StarfishTemplatePreview />
+                      ) : (
+                        template.columns.map((col) => (
+                          <FluentEmoji key={col.title} emoji={col.emoji} size="1.5rem" />
+                        ))
+                      )}
                     </div>
                     <h3 className="font-semibold">{template.name}</h3>
                     <p className="mt-1 text-sm text-muted-foreground leading-relaxed">

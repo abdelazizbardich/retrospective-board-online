@@ -32,6 +32,7 @@ interface BoardContextValue {
   vote: (columnId: string, cardId: string) => Promise<void>;
   unvote: (columnId: string, cardId: string) => Promise<void>;
   setPhase: (phase: BoardPhase) => Promise<void>;
+  changeTemplate: (templateId: string, preserveSections?: boolean) => Promise<void>;
   setTimer: (opts: { remaining?: number; total?: number; running?: boolean }) => Promise<void>;
   addColumn: (title: string, color: string, emoji: string) => Promise<void>;
   editColumn: (columnId: string, opts: { title?: string; color?: string; emoji?: string }) => Promise<void>;
@@ -280,6 +281,7 @@ export function BoardProvider({
         setParticipant(p);
         setBoard(result.board);
         sessionStorage.setItem(`retro-participant-${boardId}`, JSON.stringify(p));
+        sessionStorage.removeItem(`retro-pending-${boardId}`);
       }
     },
     [patchBoard, boardId]
@@ -339,6 +341,13 @@ export function BoardProvider({
   const setPhase = useCallback(
     async (phase: BoardPhase) => {
       await patchBoard({ action: "set-phase", phase });
+    },
+    [patchBoard]
+  );
+
+  const changeTemplate = useCallback(
+    async (templateId: string, preserveSections?: boolean) => {
+      await patchBoard({ action: "change-template", templateId, preserveSections: preserveSections === true });
     },
     [patchBoard]
   );
@@ -530,6 +539,7 @@ export function BoardProvider({
         vote,
         unvote,
         setPhase,
+        changeTemplate,
         setTimer,
         addColumn,
         editColumn,

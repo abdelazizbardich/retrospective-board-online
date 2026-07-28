@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBoardContext } from "@/lib/board-context";
 import type { BoardPhase } from "@/lib/types";
+import { DEFAULT_TIMER_SECONDS } from "@/lib/types";
 import { sfxTick, sfxTimerDone, sfxPhaseChange } from "@/lib/sounds";
 import { exportBoardToExcel } from "@/lib/export-board";
 import { FluentEmoji } from "@/lib/fluent-emoji";
@@ -24,6 +25,7 @@ import {
   UserX,
   MessageCircle,
 } from "lucide-react";
+import { ChangeTemplateModal } from "./change-template-modal";
 
 const PHASES: { key: BoardPhase; label: string; emoji: string; description: string }[] = [
   { key: "writing", label: "Write", emoji: "📝", description: "Add your thoughts to each column" },
@@ -40,7 +42,7 @@ export function BoardHeader() {
   const [copied, setCopied] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [localRemaining, setLocalRemaining] = useState(board?.timer.remaining ?? 300);
+  const [localRemaining, setLocalRemaining] = useState(board?.timer.remaining ?? DEFAULT_TIMER_SECONDS);
   const [editingTimer, setEditingTimer] = useState(false);
   const [timerInputMin, setTimerInputMin] = useState("");
   const [timerInputSec, setTimerInputSec] = useState("");
@@ -377,6 +379,9 @@ export function BoardHeader() {
             </span>
           )}
         </button>
+
+        {/* Change template */}
+        {participant && <ChangeTemplateModal />}
 
         {/* Share link */}
         <button

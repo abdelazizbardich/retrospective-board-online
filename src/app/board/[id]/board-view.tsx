@@ -6,6 +6,7 @@ import { JoinForm } from "./join-form";
 import { BoardHeader } from "./board-header";
 import { BoardColumn } from "./board-column";
 import { AddColumnButton } from "./add-column-button";
+import { RadialBoardLayout } from "./radial-board-layout";
 import { ChatDrawer } from "./chat-drawer";
 import { FluentEmoji } from "@/lib/fluent-emoji";
 import { useUser } from "@/lib/user-context";
@@ -103,6 +104,7 @@ export function BoardView() {
   }
 
   const safeIdx = Math.min(activeColIdx, board.columns.length - 1);
+  const isRadial = board.layout === "radial";
 
   return (
     <div className="flex min-h-screen flex-col bg-background relative overflow-hidden">
@@ -162,9 +164,22 @@ export function BoardView() {
         {board.columns[safeIdx] && (
           <BoardColumn column={board.columns[safeIdx]} index={safeIdx} total={board.columns.length} />
         )}
+        {!isDone && isHost && isRadial && (
+          <div className="mt-3 shrink-0">
+            <AddColumnButton />
+          </div>
+        )}
       </main>
 
-      {/* Desktop: columns */}
+      {/* Desktop: radial starfish layout */}
+      {isRadial && (
+        <div className="hidden md:flex flex-1 overflow-hidden">
+          <RadialBoardLayout columns={board.columns} />
+        </div>
+      )}
+
+      {/* Desktop: standard columns */}
+      {!isRadial && (
       <div className="hidden md:flex flex-1 overflow-hidden">
         <main className="flex flex-1 gap-4 overflow-x-auto p-4">
           {board.columns.map((column, idx) => (
@@ -183,6 +198,7 @@ export function BoardView() {
           )}
         </main>
       </div>
+      )}
 
       <ChatDrawer />
     </div>

@@ -29,10 +29,14 @@ export interface ChatMessage {
   createdAt: number;
 }
 
+export type BoardLayout = "columns" | "radial";
+
 export interface Board {
   id: string;
   name: string;
   createdAt: number;
+  templateId?: string;
+  layout?: BoardLayout;
   columns: Column[];
   participants: Participant[];
   pendingJoinRequests: PendingJoinRequest[];
@@ -51,6 +55,7 @@ export interface Participant {
   joinedAt: number;
   anonymous: boolean;
   left?: boolean;
+  userId?: string;
 }
 
 export interface PendingJoinRequest {
@@ -65,12 +70,15 @@ export interface TimerState {
   total: number; // seconds
 }
 
+export const DEFAULT_TIMER_SECONDS = 15 * 60;
+
 export type BoardPhase = "writing" | "grouping" | "voting" | "discussing" | "done";
 
 export interface BoardTemplate {
   id: string;
   name: string;
   description: string;
+  layout?: BoardLayout;
   columns: Pick<Column, "title" | "color" | "emoji">[];
 }
 
@@ -125,6 +133,19 @@ export const BOARD_TEMPLATES: BoardTemplate[] = [
       { title: "Anchor (holds us back)", color: "red", emoji: "⚓" },
       { title: "Rocks (risks)", color: "yellow", emoji: "🪨" },
       { title: "Island (goals)", color: "blue", emoji: "🏝️" },
+    ],
+  },
+  {
+    id: "starfish",
+    name: "Starfish",
+    description: "Five-arm reflection: more, less, start, stop, and keep.",
+    layout: "radial",
+    columns: [
+      { title: "More", color: "blue", emoji: "📈" },
+      { title: "Less", color: "purple", emoji: "📉" },
+      { title: "Start", color: "yellow", emoji: "🚀" },
+      { title: "Stop", color: "red", emoji: "🛑" },
+      { title: "Keep", color: "green", emoji: "✅" },
     ],
   },
 ];

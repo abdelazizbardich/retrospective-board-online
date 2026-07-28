@@ -6,19 +6,24 @@ import { useUser } from "@/lib/user-context";
 import { LayoutGrid, UserCircle2, Link2, Clock, XCircle } from "lucide-react";
 
 export function JoinForm({ boardName }: { boardName: string }) {
-  const { joinBoard, pendingRequestId, joinRejected } = useBoardContext();
+  const { joinBoard, pendingRequestId, joinRejected, participant, board } = useBoardContext();
   const { user } = useUser();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // If user is logged in, auto-join with their username
+  // If user is logged in, auto-join with their username (once per session)
   useEffect(() => {
-    if (user && !pendingRequestId && !joinRejected) {
-      joinBoard(user.username, user.id).catch(() => {});
-    }
+    if (!user || pendingRequestId || joinRejected) return;
+
+    const isOwner = !!(board?.ownerId && user.id === board.ownerId);
+    const needsHostReclaim = isOwner && participant && board?.hostId !== participant.id;
+
+    if (participant && !needsHostReclaim) return;
+
+    joinBoard(user.username, user.id).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.username]);
+  }, [user?.id, board?.ownerId, board?.hostId, participant?.id, pendingRequestId, joinRejected]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

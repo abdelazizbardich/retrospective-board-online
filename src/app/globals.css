@@ -87,6 +87,18 @@ body {
 .dark .brand-purple-stripe { background-color: #d966e8; }
 .brand-purple-count { background-color: rgb(165 65 178 / 0.1); }
 
+/* Starfish wedge section backgrounds */
+.starfish-wedge-green { background-color: rgb(38 147 83 / 0.2); }
+.dark .starfish-wedge-green { background-color: rgb(38 147 83 / 0.28); }
+.starfish-wedge-red { background-color: rgb(252 165 165 / 0.35); }
+.dark .starfish-wedge-red { background-color: rgb(127 29 29 / 0.3); }
+.starfish-wedge-blue { background-color: rgb(43 72 169 / 0.18); }
+.dark .starfish-wedge-blue { background-color: rgb(43 72 169 / 0.28); }
+.starfish-wedge-yellow { background-color: rgb(213 166 21 / 0.22); }
+.dark .starfish-wedge-yellow { background-color: rgb(213 166 21 / 0.28); }
+.starfish-wedge-purple { background-color: rgb(165 65 178 / 0.2); }
+.dark .starfish-wedge-purple { background-color: rgb(165 65 178 / 0.28); }
+
 /* ── Animations ──────────────────────────────────────────────────── */
 
 @keyframes fade-in-up {
