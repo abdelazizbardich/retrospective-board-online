@@ -1,7 +1,7 @@
 Create a publication-ready, SEO-optimized blog post for SprintsPlans (https://sprintsplans.com/) about:
 
 TOPIC: [INSERT TOPIC]
-CATEGORY: [INSERT CATEGORY OR CHOOSE THE MOST RELEVANT]
+CATEGORY: Agile, Guides, Project Management, Remote Teams, Retrospective Activities Games, Retrospective Facilitation, Retrospective Templates, Scrum, Sprint Retrospectives, Team Improvement, Tools Comparisons
 
 Before writing:
 

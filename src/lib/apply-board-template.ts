@@ -48,7 +48,7 @@ export function inferTemplateId(board: Pick<Board, "columns" | "templateId">): s
     { id: "4ls", key: "Liked|Learned|Lacked|Longed for" },
     { id: "start-stop-continue", key: "Start|Stop|Continue" },
     { id: "mad-sad-glad", key: "Mad|Sad|Glad" },
-    { id: "sailboat", key: "Wind (helps us)|Anchor (holds us back)|Rocks (risks)|Island (goals)" },
+    { id: "sailboat", key: "Wind|Sun|Anchor|Reef|Sprint Goal" },
     { id: "starfish", key: "More|Less|Start|Stop|Keep" },
   ].find((t) => t.key === titles);
 

@@ -3,9 +3,10 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { BOARD_TEMPLATES } from "@/lib/types";
+import { BOARD_TEMPLATES, hasIllustratedLayout } from "@/lib/types";
 import { FluentEmoji } from "@/lib/fluent-emoji";
 import { StarfishTemplatePreview } from "./starfish-template-preview";
+import { SailboatTemplatePreview } from "./sailboat-template-preview";
 import { useUser } from "@/lib/user-context";
 import {
   ArrowLeft,
@@ -401,9 +402,11 @@ export default function CreateBoardPage() {
                     {selectedTemplate === template.id && (
                       <CheckCircle2 className="absolute right-3 top-3 size-5 text-primary" />
                     )}
-                    <div className={`mb-3 ${template.layout === "radial" ? "flex justify-center px-2" : "flex gap-1.5 items-center"}`}>
+                    <div className={`mb-3 ${hasIllustratedLayout(template.layout) ? "flex justify-center px-2" : "flex gap-1.5 items-center"}`}>
                       {template.layout === "radial" ? (
                         <StarfishTemplatePreview />
+                      ) : template.layout === "sailboat" ? (
+                        <SailboatTemplatePreview />
                       ) : (
                         template.columns.map((col) => (
                           <FluentEmoji key={col.title} emoji={col.emoji} size="1.5rem" />

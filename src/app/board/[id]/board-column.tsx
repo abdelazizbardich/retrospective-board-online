@@ -76,6 +76,17 @@ const COLOR_MAP: Record<string, { border: string; bg: string; bodyBg: string; we
     accent: "brand-purple-stripe",
     countBg: "brand-purple-count brand-purple-title",
   },
+  gray: {
+    border: "border-zinc-200 dark:border-zinc-700",
+    bg: "bg-zinc-50 dark:bg-zinc-900/40",
+    bodyBg: "bg-zinc-50/40 dark:bg-zinc-900/10",
+    wedgeBg: "bg-zinc-200/40 dark:bg-zinc-700/30",
+    title: "text-zinc-600 dark:text-zinc-400",
+    cardBg: "bg-zinc-50 dark:bg-zinc-800/70",
+    cardStripe: "bg-zinc-300 dark:bg-zinc-500",
+    accent: "bg-zinc-300 dark:bg-zinc-500",
+    countBg: "bg-zinc-100 dark:bg-zinc-800/50",
+  },
 };
 
 export type ColumnColorStyles = (typeof COLOR_MAP)[string];
@@ -90,6 +101,7 @@ const AVAILABLE_COLORS = [
   { key: "blue", label: "Blue" },
   { key: "yellow", label: "Yellow" },
   { key: "purple", label: "Purple" },
+  { key: "gray", label: "Gray" },
 ];
 
 export function BoardColumn({ column, index, total }: { column: Column; index: number; total: number }) {

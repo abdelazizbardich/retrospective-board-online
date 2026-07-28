@@ -10,6 +10,7 @@ const AVAILABLE_COLORS = [
   { key: "blue", label: "Blue", hex: "#2b48a9" },
   { key: "yellow", label: "Yellow", hex: "#d5a615" },
   { key: "purple", label: "Purple", hex: "#a541b2" },
+  { key: "gray", label: "Gray", hex: "#a1a1aa" },
 ];
 
 export function AddColumnButton() {

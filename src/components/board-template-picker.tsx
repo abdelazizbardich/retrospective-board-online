@@ -1,8 +1,9 @@
 "use client";
 
-import { BOARD_TEMPLATES } from "@/lib/types";
+import { BOARD_TEMPLATES, hasIllustratedLayout } from "@/lib/types";
 import { FluentEmoji } from "@/lib/fluent-emoji";
 import { StarfishTemplatePreview } from "@/app/create/starfish-template-preview";
+import { SailboatTemplatePreview } from "@/app/create/sailboat-template-preview";
 import { CheckCircle2 } from "lucide-react";
 
 interface BoardTemplatePickerProps {
@@ -27,9 +28,11 @@ export function BoardTemplatePicker({ selectedId, onSelect }: BoardTemplatePicke
           {selectedId === template.id && (
             <CheckCircle2 className="absolute right-3 top-3 size-4 text-primary" />
           )}
-          <div className={`mb-2 ${template.layout === "radial" ? "flex justify-center px-1" : "flex gap-1.5 items-center"}`}>
+          <div className={`mb-2 ${hasIllustratedLayout(template.layout) ? "flex justify-center px-1" : "flex gap-1.5 items-center"}`}>
             {template.layout === "radial" ? (
               <StarfishTemplatePreview />
+            ) : template.layout === "sailboat" ? (
+              <SailboatTemplatePreview />
             ) : (
               template.columns.map((col) => (
                 <FluentEmoji key={col.title} emoji={col.emoji} size="1.25rem" />

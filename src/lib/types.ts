@@ -29,7 +29,11 @@ export interface ChatMessage {
   createdAt: number;
 }
 
-export type BoardLayout = "columns" | "radial";
+export type BoardLayout = "columns" | "radial" | "sailboat";
+
+export function hasIllustratedLayout(layout?: BoardLayout): boolean {
+  return layout === "radial" || layout === "sailboat";
+}
 
 export interface Board {
   id: string;
@@ -126,13 +130,16 @@ export const BOARD_TEMPLATES: BoardTemplate[] = [
   },
   {
     id: "sailboat",
-    name: "Sailboat",
-    description: "Visualize what propels you forward and what holds you back.",
+    name: "Sailboat Retrospective",
+    description:
+      "Sail toward your sprint goal — capture wind, sunshine, anchors, and reefs along the journey.",
+    layout: "sailboat",
     columns: [
-      { title: "Wind (helps us)", color: "green", emoji: "💨" },
-      { title: "Anchor (holds us back)", color: "red", emoji: "⚓" },
-      { title: "Rocks (risks)", color: "yellow", emoji: "🪨" },
-      { title: "Island (goals)", color: "blue", emoji: "🏝️" },
+      { title: "Wind", color: "green", emoji: "💨" },
+      { title: "Sun", color: "yellow", emoji: "☀️" },
+      { title: "Anchor", color: "blue", emoji: "⚓" },
+      { title: "Reef", color: "gray", emoji: "🪸" },
+      { title: "Sprint Goal", color: "purple", emoji: "🏝️" },
     ],
   },
   {

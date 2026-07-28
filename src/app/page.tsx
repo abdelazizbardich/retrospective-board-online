@@ -14,8 +14,10 @@ import {
 import type { Metadata } from "next";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 import { StarfishTemplatePreview } from "@/app/create/starfish-template-preview";
+import { SailboatTemplatePreview } from "@/app/create/sailboat-template-preview";
 import { getWedgeFillColor } from "@/app/board/[id]/starfish-geometry";
-import { BOARD_TEMPLATES } from "@/lib/types";
+import { getSailboatSectionFillColor } from "@/app/board/[id]/sailboat-geometry";
+import { BOARD_TEMPLATES, hasIllustratedLayout } from "@/lib/types";
 
 function templateHref(id: string) {
   return id === "starfish" ? "/templates/starfish" : `/create?template=${id}`;
@@ -280,10 +282,12 @@ export default function Home() {
                   </div>
                 )}
                 <div
-                  className={`mb-4 ${template.layout === "radial" ? "flex justify-center" : "flex flex-wrap gap-2 text-2xl"}`}
+                  className={`mb-4 ${hasIllustratedLayout(template.layout) ? "flex justify-center" : "flex flex-wrap gap-2 text-2xl"}`}
                 >
                   {template.layout === "radial" ? (
                     <StarfishTemplatePreview />
+                  ) : template.layout === "sailboat" ? (
+                    <SailboatTemplatePreview />
                   ) : (
                     template.columns.map((col) => (
                       <span key={col.title} title={col.title}>
@@ -301,7 +305,12 @@ export default function Home() {
                     <span
                       key={col.title}
                       className="rounded-lg px-2.5 py-1.5"
-                      style={{ backgroundColor: getWedgeFillColor(col.color) }}
+                      style={{
+                        backgroundColor:
+                          template.layout === "sailboat"
+                            ? getSailboatSectionFillColor(col.color)
+                            : getWedgeFillColor(col.color),
+                      }}
                     >
                       {col.title}
                     </span>
