@@ -26,20 +26,20 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 export const metadata: Metadata = {
   title: "Free Online Retrospective Board for Agile Teams",
   description:
-    "Run better agile retrospectives online. Collect feedback, vote anonymously, and turn insights into action — in real time. Free for up to 5 participants.",
+    "Run better agile retrospectives online. Collect feedback, vote anonymously, and turn insights into action — in real time. Free for everyone.",
   alternates: { canonical: SITE_URL },
   openGraph: {
     url: SITE_URL,
     type: "website",
     title: "SprintsPlans — Free Online Retrospective Board",
     description:
-      "Run better agile retrospectives online. Collect feedback, vote anonymously, and turn insights into action — in real time.",
+      "Run better agile retrospectives online. Collect feedback, vote anonymously, and turn insights into action — in real time. Free for everyone.",
   },
   twitter: {
     card: "summary_large_image",
     title: "SprintsPlans — Free Online Retrospective Board",
     description:
-      "Run better agile retrospectives online. Collect feedback, vote anonymously, and turn insights into action — in real time.",
+      "Run better agile retrospectives online. Collect feedback, vote anonymously, and turn insights into action — in real time. Free for everyone.",
   },
 };
 
@@ -168,7 +168,7 @@ export default function Home() {
             </a>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            No credit card required · Free for up to 5 participants
+            No credit card required · Free for everyone
           </p>
         </div>
 
