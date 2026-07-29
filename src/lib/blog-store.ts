@@ -1,5 +1,8 @@
 import { nanoid } from "nanoid";
 import { getSupabase } from "./db";
+import { SeoAnalyzerService } from "./seo/seo-analyzer-service";
+import type { SeoAnalysisOutput, SeoPostInput } from "./seo/types";
+import { emptySeoFields } from "./seo/types";
 
 export interface BlogPost {
   id: string;
@@ -12,10 +15,52 @@ export interface BlogPost {
   coverImage: string;
   tags: string; // comma-separated
   metaDescription: string;
+  focusKeyword: string;
+  secondaryKeywords: string;
+  seoTitle: string;
+  canonicalUrl: string;
+  robotsIndex: boolean;
+  robotsFollow: boolean;
+  ogTitle: string;
+  ogDescription: string;
+  ogImage: string;
+  twitterTitle: string;
+  twitterDescription: string;
+  twitterImage: string;
+  schemaType: string;
+  seoScore: number;
+  seoAnalysis: SeoAnalysisOutput | null;
   published: boolean;
   scheduledAt: number | null;
   createdAt: number;
   updatedAt: number;
+}
+
+export function blogPostToSeoInput(post: BlogPost): SeoPostInput {
+  return {
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt,
+    content: post.content,
+    coverImage: post.coverImage,
+    tags: post.tags,
+    category: post.category,
+    author: post.author,
+    focusKeyword: post.focusKeyword,
+    secondaryKeywords: post.secondaryKeywords,
+    seoTitle: post.seoTitle,
+    metaDescription: post.metaDescription,
+    canonicalUrl: post.canonicalUrl,
+    robotsIndex: post.robotsIndex,
+    robotsFollow: post.robotsFollow,
+    ogTitle: post.ogTitle,
+    ogDescription: post.ogDescription,
+    ogImage: post.ogImage,
+    twitterTitle: post.twitterTitle,
+    twitterDescription: post.twitterDescription,
+    twitterImage: post.twitterImage,
+    schemaType: post.schemaType,
+  };
 }
 
 export function resolveBlogPublishState(input: {
@@ -59,13 +104,38 @@ type BlogPostRow = {
   cover_image: string;
   tags: string;
   meta_description: string;
+  focus_keyword?: string;
+  secondary_keywords?: string;
+  seo_title?: string;
+  canonical_url?: string;
+  robots_index?: boolean;
+  robots_follow?: boolean;
+  og_title?: string;
+  og_description?: string;
+  og_image?: string;
+  twitter_title?: string;
+  twitter_description?: string;
+  twitter_image?: string;
+  schema_type?: string;
+  seo_score?: number;
+  seo_analysis?: string | null;
   published: boolean;
   scheduled_at: number | null;
   created_at: number;
   updated_at: number;
 };
 
+function parseSeoAnalysis(raw: string | null | undefined): SeoAnalysisOutput | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as SeoAnalysisOutput;
+  } catch {
+    return null;
+  }
+}
+
 function rowToPost(row: BlogPostRow): BlogPost {
+  const defaults = emptySeoFields();
   return {
     id: row.id,
     slug: row.slug,
@@ -77,11 +147,137 @@ function rowToPost(row: BlogPostRow): BlogPost {
     coverImage: row.cover_image,
     tags: row.tags,
     metaDescription: row.meta_description,
+    focusKeyword: row.focus_keyword ?? defaults.focusKeyword,
+    secondaryKeywords: row.secondary_keywords ?? defaults.secondaryKeywords,
+    seoTitle: row.seo_title ?? defaults.seoTitle,
+    canonicalUrl: row.canonical_url ?? defaults.canonicalUrl,
+    robotsIndex: row.robots_index ?? defaults.robotsIndex,
+    robotsFollow: row.robots_follow ?? defaults.robotsFollow,
+    ogTitle: row.og_title ?? defaults.ogTitle,
+    ogDescription: row.og_description ?? defaults.ogDescription,
+    ogImage: row.og_image ?? defaults.ogImage,
+    twitterTitle: row.twitter_title ?? defaults.twitterTitle,
+    twitterDescription: row.twitter_description ?? defaults.twitterDescription,
+    twitterImage: row.twitter_image ?? defaults.twitterImage,
+    schemaType: row.schema_type ?? defaults.schemaType,
+    seoScore: row.seo_score ?? defaults.seoScore,
+    seoAnalysis: parseSeoAnalysis(row.seo_analysis),
     published: row.published,
     scheduledAt: row.scheduled_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function seoFieldsToRow(data: Partial<BlogPost>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (data.focusKeyword !== undefined) row.focus_keyword = data.focusKeyword;
+  if (data.secondaryKeywords !== undefined) row.secondary_keywords = data.secondaryKeywords;
+  if (data.seoTitle !== undefined) row.seo_title = data.seoTitle;
+  if (data.canonicalUrl !== undefined) row.canonical_url = data.canonicalUrl;
+  if (data.robotsIndex !== undefined) row.robots_index = data.robotsIndex;
+  if (data.robotsFollow !== undefined) row.robots_follow = data.robotsFollow;
+  if (data.ogTitle !== undefined) row.og_title = data.ogTitle;
+  if (data.ogDescription !== undefined) row.og_description = data.ogDescription;
+  if (data.ogImage !== undefined) row.og_image = data.ogImage;
+  if (data.twitterTitle !== undefined) row.twitter_title = data.twitterTitle;
+  if (data.twitterDescription !== undefined) row.twitter_description = data.twitterDescription;
+  if (data.twitterImage !== undefined) row.twitter_image = data.twitterImage;
+  if (data.schemaType !== undefined) row.schema_type = data.schemaType;
+  if (data.seoScore !== undefined) row.seo_score = data.seoScore;
+  if (data.seoAnalysis !== undefined) {
+    row.seo_analysis = data.seoAnalysis ? JSON.stringify(data.seoAnalysis) : null;
+  }
+  return row;
+}
+
+const SEO_DB_KEYS = new Set([
+  "focus_keyword",
+  "secondary_keywords",
+  "seo_title",
+  "canonical_url",
+  "robots_index",
+  "robots_follow",
+  "og_title",
+  "og_description",
+  "og_image",
+  "twitter_title",
+  "twitter_description",
+  "twitter_image",
+  "schema_type",
+  "seo_score",
+  "seo_analysis",
+]);
+
+let seoColumnsAvailable: boolean | null = null;
+
+function isMissingSeoColumnError(message: string): boolean {
+  return /could not find the .* column|column .* does not exist/i.test(message);
+}
+
+function stripSeoDbFields(data: Record<string, unknown>): Record<string, unknown> {
+  const stripped: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (!SEO_DB_KEYS.has(key)) stripped[key] = value;
+  }
+  return stripped;
+}
+
+function seoDbUpdates(
+  analysis: SeoAnalysisOutput,
+  patch: Partial<BlogPost>
+): Record<string, unknown> {
+  return {
+    seo_score: analysis.totalScore,
+    seo_analysis: JSON.stringify(analysis),
+    ...seoFieldsToRow({ ...patch, seoScore: analysis.totalScore, seoAnalysis: analysis }),
+  };
+}
+
+async function writeBlogPost(
+  mode: "insert" | "update",
+  data: Record<string, unknown>,
+  slug?: string
+): Promise<{ error: { message: string } | null; seoPersisted: boolean }> {
+  // Always try SEO columns first so migration takes effect without a server restart.
+  const withSeo = data;
+  const withoutSeo = stripSeoDbFields(data);
+
+  if (mode === "insert") {
+    const { error } = await getSupabase().from("blog_posts").insert(withSeo);
+    if (!error) {
+      seoColumnsAvailable = true;
+      return { error: null, seoPersisted: true };
+    }
+    if (isMissingSeoColumnError(error.message)) {
+      seoColumnsAvailable = false;
+      const { error: retryError } = await getSupabase().from("blog_posts").insert(withoutSeo);
+      return { error: retryError, seoPersisted: false };
+    }
+    return { error, seoPersisted: false };
+  }
+
+  const { error } = await getSupabase()
+    .from("blog_posts")
+    .update(withSeo)
+    .eq("slug", slug!);
+  if (!error) {
+    seoColumnsAvailable = true;
+    return { error: null, seoPersisted: true };
+  }
+  if (isMissingSeoColumnError(error.message)) {
+    seoColumnsAvailable = false;
+    const { error: retryError } = await getSupabase()
+      .from("blog_posts")
+      .update(withoutSeo)
+      .eq("slug", slug!);
+    return { error: retryError, seoPersisted: false };
+  }
+  return { error, seoPersisted: false };
+}
+
+export function getSeoColumnsAvailable(): boolean | null {
+  return seoColumnsAvailable;
 }
 
 // ── CRUD ───────────────────────────────────────────────────────────────────
@@ -310,7 +506,10 @@ export async function createBlogPost(
   const id = nanoid(8);
   const now = Date.now();
 
-  const { error } = await getSupabase().from("blog_posts").insert({
+  const seoInput = blogPostToSeoInput({ ...data, id, createdAt: now, updatedAt: now } as BlogPost);
+  const analysis = SeoAnalyzerService.analyze(seoInput);
+
+  const insertData: Record<string, unknown> = {
     id,
     slug: data.slug,
     title: data.title,
@@ -325,17 +524,40 @@ export async function createBlogPost(
     scheduled_at: data.scheduledAt ?? null,
     created_at: now,
     updated_at: now,
-  });
+    ...seoDbUpdates(analysis, data),
+  };
 
+  const { error } = await writeBlogPost("insert", insertData);
   if (error) throw new Error(error.message);
-  return { id, ...data, createdAt: now, updatedAt: now };
+  return {
+    id,
+    ...data,
+    seoScore: analysis.totalScore,
+    seoAnalysis: analysis,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 export async function updateBlogPost(
   slug: string,
   patch: Partial<Omit<BlogPost, "id" | "createdAt">>
 ): Promise<BlogPost | undefined> {
-  const updates: Record<string, unknown> = { updated_at: Date.now() };
+  const existing = await getBlogPost(slug);
+  if (!existing) return undefined;
+
+  const merged: BlogPost = { ...existing, ...patch, updatedAt: Date.now() };
+  const seoInput = blogPostToSeoInput(merged);
+  const allPosts = await getAllBlogPosts(true);
+  const analysis = SeoAnalyzerService.analyze(seoInput, {
+    existingTitles: allPosts.map((p) => p.seoTitle || p.title),
+    existingDescriptions: allPosts.map((p) => p.metaDescription),
+  });
+
+  const updates: Record<string, unknown> = {
+    updated_at: Date.now(),
+    ...seoDbUpdates(analysis, patch),
+  };
 
   if (patch.slug !== undefined)            updates.slug             = patch.slug;
   if (patch.title !== undefined)           updates.title            = patch.title;
@@ -350,7 +572,7 @@ export async function updateBlogPost(
   if (patch.scheduledAt !== undefined)    updates.scheduled_at     = patch.scheduledAt;
   if (patch.published === true)            updates.scheduled_at     = null;
 
-  const { error } = await getSupabase().from("blog_posts").update(updates).eq("slug", slug);
+  const { error } = await writeBlogPost("update", updates, slug);
   if (error) throw new Error(error.message);
 
   const newSlug = patch.slug ?? slug;

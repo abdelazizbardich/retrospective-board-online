@@ -46,14 +46,15 @@ export function websiteSchema() {
 }
 
 export function blogPostingSchema(post: BlogPost) {
-  const url = `${SITE_URL}/blog/${post.slug}`;
+  const url = post.canonicalUrl || `${SITE_URL}/blog/${post.slug}`;
   const description = post.metaDescription || post.excerpt || undefined;
-  const coverImage = toAbsoluteUrl(getPostCoverImage(post));
+  const coverImage = toAbsoluteUrl(post.ogImage || getPostCoverImage(post));
+  const headline = post.seoTitle || post.title;
 
   return {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: post.title,
+    "@type": post.schemaType || "BlogPosting",
+    headline,
     description,
     image: [coverImage],
     author: post.author

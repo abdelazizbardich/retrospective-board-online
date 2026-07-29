@@ -21,16 +21,38 @@ export async function generateMetadata(
   const post = await getBlogPost(slug);
   if (!post?.published) return {};
   const coverImage = getPostCoverImage(post);
+  const seoTitle = post.seoTitle || post.title;
+  const description = post.metaDescription || post.excerpt || undefined;
+  const canonical = post.canonicalUrl || `${SITE_URL}/blog/${slug}`;
+  const ogTitle = post.ogTitle || seoTitle;
+  const ogDescription = post.ogDescription || description;
+  const ogImage = post.ogImage || coverImage;
+  const twitterTitle = post.twitterTitle || ogTitle;
+  const twitterDescription = post.twitterDescription || ogDescription;
+  const twitterImage = post.twitterImage || ogImage;
+
+  const robots = {
+    index: post.robotsIndex !== false,
+    follow: post.robotsFollow !== false,
+  };
+
   return {
-    title: `${post.title} — SprintsPlans Blog`,
-    description: post.metaDescription || post.excerpt || undefined,
-    alternates: { canonical: `${SITE_URL}/blog/${slug}` },
+    title: `${seoTitle} — SprintsPlans Blog`,
+    description,
+    alternates: { canonical },
+    robots,
     openGraph: {
-      title: post.title,
-      description: post.metaDescription || post.excerpt || undefined,
-      url: `${SITE_URL}/blog/${slug}`,
+      title: ogTitle,
+      description: ogDescription,
+      url: canonical,
       type: "article",
-      images: [{ url: coverImage }],
+      images: [{ url: ogImage }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: twitterTitle,
+      description: twitterDescription,
+      images: [twitterImage],
     },
   };
 }

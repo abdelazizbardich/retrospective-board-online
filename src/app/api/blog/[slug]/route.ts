@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBlogPost, updateBlogPost, deleteBlogPost, resolveBlogPublishState } from "@/lib/blog-store";
 import { requireAdmin } from "@/app/api/admin/auth/route";
+import { parseSeoFieldsFromBody } from "@/lib/seo/api-helpers";
 
 export async function GET(
   request: NextRequest,
@@ -80,6 +81,7 @@ export async function PATCH(
       ...(body.coverImage !== undefined      && { coverImage:      String(body.coverImage).trim().slice(0, 500) }),
       ...(body.tags !== undefined            && { tags:            String(body.tags).trim().slice(0, 300) }),
       ...(body.metaDescription !== undefined && { metaDescription: String(body.metaDescription).trim().slice(0, 300) }),
+      ...parseSeoFieldsFromBody(body),
       ...(publishState && {
         published: publishState.published,
         scheduledAt: publishState.scheduledAt,
@@ -91,7 +93,10 @@ export async function PATCH(
     if (err?.message?.includes("UNIQUE") || err?.code === "23505") {
       return NextResponse.json({ error: "A post with this slug already exists" }, { status: 409 });
     }
-    throw error;
+    return NextResponse.json(
+      { error: err?.message ?? "Failed to save post" },
+      { status: 500 }
+    );
   }
 }
 

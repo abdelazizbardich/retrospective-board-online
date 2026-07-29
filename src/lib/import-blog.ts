@@ -12,6 +12,7 @@ export interface ImportedBlogPost {
   coverImage: string;
   tags: string;
   metaDescription: string;
+  focusKeyword: string;
   published: boolean;
 }
 
@@ -25,6 +26,15 @@ const HEADER_ALIASES: Record<keyof Omit<ImportedBlogPost, "published">, string[]
   coverImage: ["coverimage", "cover_image", "cover image", "image", "cover"],
   tags: ["tags", "tag", "keywords"],
   metaDescription: ["metadescription", "meta_description", "meta description", "seo", "seo description"],
+  focusKeyword: [
+    "focus keyword",
+    "focus_keyword",
+    "focuskeyword",
+    "seo focus keyword",
+    "primary keyword",
+    "target keyword",
+    "focus key word",
+  ],
 };
 
 function normalizeHeader(value: unknown): string {
@@ -258,6 +268,7 @@ export async function parseBlogExcelFile(file: File): Promise<ImportedBlogPost[]
       }),
       tags: (col.tags !== undefined ? cellString(row[col.tags]) : "").slice(0, 300),
       metaDescription: (col.metaDescription !== undefined ? cellString(row[col.metaDescription]) : "").slice(0, 300),
+      focusKeyword: (col.focusKeyword !== undefined ? cellString(row[col.focusKeyword]) : "").slice(0, 100),
       published: false,
     });
   }
@@ -278,6 +289,7 @@ export async function downloadBlogImportTemplate(): Promise<void> {
       "coverImage",
       "tags",
       "metaDescription",
+      "focusKeyword",
     ],
     [
       "How to Run a Great Retro",
@@ -289,6 +301,7 @@ export async function downloadBlogImportTemplate(): Promise<void> {
       "https://example.com/cover.jpg",
       "agile, retro, teams",
       "Learn how to facilitate effective sprint retrospectives.",
+      "sprint retrospective",
     ],
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);

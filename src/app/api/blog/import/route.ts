@@ -4,6 +4,7 @@ import { createBlogCategory, getAllBlogCategories } from "@/lib/blog-category-st
 import { applyImportPostLinks } from "@/lib/import-blog";
 import { resolveCoverImage } from "@/lib/blog-thumbnail";
 import { requireAdmin } from "@/app/api/admin/auth/route";
+import { emptySeoFields } from "@/lib/seo/types";
 
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -17,6 +18,7 @@ type ImportRow = {
   coverImage?: unknown;
   tags?: unknown;
   metaDescription?: unknown;
+  focusKeyword?: unknown;
 };
 
 export async function POST(request: NextRequest) {
@@ -90,6 +92,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await createBlogPost({
+        ...emptySeoFields(),
         title,
         slug,
         excerpt: String(row.excerpt ?? "").trim().slice(0, 500),
@@ -99,6 +102,7 @@ export async function POST(request: NextRequest) {
         coverImage,
         tags: String(row.tags ?? "").trim().slice(0, 300),
         metaDescription: String(row.metaDescription ?? "").trim().slice(0, 300),
+        focusKeyword: String(row.focusKeyword ?? "").trim().slice(0, 100),
         published: false,
         scheduledAt: null,
       });

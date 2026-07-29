@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect, FormEvent, useRef } from "react";
+import { useState, useEffect, FormEvent, useRef, useMemo } from "react";
 import Link from "next/link";
 import { RichTextEditor } from "@/app/components/rich-text-editor";
 import { TagInput } from "@/app/components/tag-input";
+import { BlogSeoPanel, type SeoFormFields } from "@/app/components/blog-seo-panel";
+import { EMPTY_SEO_FORM } from "@/lib/seo/api-helpers";
+import { insertInternalLink } from "@/lib/seo/internal-linking";
+import type { SeoPostInput } from "@/lib/seo/types";
 import {
   downloadBlogImportTemplate,
   parseBlogExcelFile,
@@ -11,7 +15,7 @@ import {
 } from "@/lib/import-blog";
 import { isPhantomLocalCoverPath } from "@/lib/blog-thumbnail";
 import {
-  Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink, X, Save, RefreshCw, Upload, Download, FileSpreadsheet, ImageIcon, Sparkles, Clock,
+  Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink, X, Save, RefreshCw, Upload, Download, FileSpreadsheet, ImageIcon, Sparkles, Clock, BarChart3,
 } from "lucide-react";
 
 interface BlogPost {
@@ -25,6 +29,20 @@ interface BlogPost {
   coverImage: string;
   tags: string;
   metaDescription: string;
+  focusKeyword: string;
+  secondaryKeywords: string;
+  seoTitle: string;
+  canonicalUrl: string;
+  robotsIndex: boolean;
+  robotsFollow: boolean;
+  ogTitle: string;
+  ogDescription: string;
+  ogImage: string;
+  twitterTitle: string;
+  twitterDescription: string;
+  twitterImage: string;
+  schemaType: string;
+  seoScore: number;
   published: boolean;
   scheduledAt: number | null;
   createdAt: number;
@@ -66,6 +84,7 @@ const EMPTY = {
   coverImage: "",
   tags: "",
   metaDescription: "",
+  ...EMPTY_SEO_FORM,
   publishMode: "draft" as PublishMode,
   scheduledAtLocal: "",
 };
@@ -107,16 +126,19 @@ export default function BlogAdminPage() {
   const [coverUploadError, setCoverUploadError] = useState("");
   const [coverDragOver, setCoverDragOver] = useState(false);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const [seoMigrated, setSeoMigrated] = useState<boolean | null>(null);
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
       fetch("/api/blog").then((r) => r.json()),
       fetch("/api/blog-categories").then((r) => r.json()),
+      fetch("/api/blog/seo-migration-status").then((r) => r.json()).catch(() => ({ migrated: null })),
     ])
-      .then(([postsData, categoriesData]) => {
+      .then(([postsData, categoriesData, seoStatus]) => {
         setPosts(postsData.posts ?? []);
         setCategories(categoriesData.categories ?? []);
+        setSeoMigrated(seoStatus.migrated === true ? true : seoStatus.migrated === false ? false : null);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -143,6 +165,19 @@ export default function BlogAdminPage() {
       coverImage: isPhantomLocalCoverPath(post.coverImage) ? "" : post.coverImage,
       tags: post.tags,
       metaDescription: post.metaDescription,
+      focusKeyword: post.focusKeyword ?? "",
+      secondaryKeywords: post.secondaryKeywords ?? "",
+      seoTitle: post.seoTitle ?? "",
+      canonicalUrl: post.canonicalUrl ?? "",
+      robotsIndex: post.robotsIndex ?? true,
+      robotsFollow: post.robotsFollow ?? true,
+      ogTitle: post.ogTitle ?? "",
+      ogDescription: post.ogDescription ?? "",
+      ogImage: post.ogImage ?? "",
+      twitterTitle: post.twitterTitle ?? "",
+      twitterDescription: post.twitterDescription ?? "",
+      twitterImage: post.twitterImage ?? "",
+      schemaType: post.schemaType ?? "BlogPosting",
       publishMode: getPublishMode(post),
       scheduledAtLocal:
         post.scheduledAt != null && post.scheduledAt > Date.now()
@@ -447,6 +482,58 @@ export default function BlogAdminPage() {
 
   const showForm = editing !== null || isNew;
 
+  const seoFields: SeoFormFields = useMemo(() => ({
+    focusKeyword: form.focusKeyword,
+    secondaryKeywords: form.secondaryKeywords,
+    seoTitle: form.seoTitle,
+    metaDescription: form.metaDescription,
+    canonicalUrl: form.canonicalUrl,
+    robotsIndex: form.robotsIndex,
+    robotsFollow: form.robotsFollow,
+    ogTitle: form.ogTitle,
+    ogDescription: form.ogDescription,
+    ogImage: form.ogImage,
+    twitterTitle: form.twitterTitle,
+    twitterDescription: form.twitterDescription,
+    twitterImage: form.twitterImage,
+    schemaType: form.schemaType,
+  }), [form]);
+
+  const seoPostInput: SeoPostInput = useMemo(() => ({
+    title: form.title,
+    slug: form.slug,
+    excerpt: form.excerpt,
+    content: form.content,
+    coverImage: form.coverImage,
+    tags: form.tags,
+    category: form.category,
+    author: form.author,
+    ...seoFields,
+  }), [form, seoFields]);
+
+  const allPostsForSeo = useMemo(
+    () => posts.map((p) => ({ slug: p.slug, title: p.title, content: p.content, category: p.category, tags: p.tags })),
+    [posts]
+  );
+
+  const handleSeoChange = (fields: Partial<SeoFormFields>) => {
+    setForm((f) => ({ ...f, ...fields }));
+  };
+
+  const handleInsertLink = (slug: string, anchor: string) => {
+    setForm((f) => ({
+      ...f,
+      content: insertInternalLink(f.content, slug, anchor),
+    }));
+  };
+
+  function seoScoreBadge(score: number) {
+    if (score >= 80) return "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400";
+    if (score >= 60) return "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400";
+    if (score >= 40) return "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400";
+    return "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400";
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -507,6 +594,13 @@ export default function BlogAdminPage() {
             <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
           </button>
           <Link
+            href="/dashboard/blog/seo"
+            className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <BarChart3 className="size-4" />
+            SEO Dashboard
+          </Link>
+          <Link
             href="/blog"
             target="_blank"
             className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
@@ -529,6 +623,16 @@ export default function BlogAdminPage() {
           </button>
         </div>
       </div>
+
+      {seoMigrated === false && (
+        <div className="rounded-xl border border-amber-400/50 bg-amber-50 dark:bg-amber-950/20 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+          <p className="font-medium">SEO database migration pending</p>
+          <p className="mt-1 text-xs opacity-90">
+            Posts save normally, but SEO scores and focus keywords won&apos;t persist until you run{" "}
+            <code className="font-mono">scripts/migrate-blog-seo.sql</code> in the Supabase SQL Editor.
+          </p>
+        </div>
+      )}
 
       {/* Post list */}
       {loading ? (
@@ -557,6 +661,7 @@ export default function BlogAdminPage() {
                   />
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Title</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden sm:table-cell">SEO</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden sm:table-cell">Status</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden md:table-cell">Category</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden lg:table-cell">Tags</th>
@@ -583,6 +688,11 @@ export default function BlogAdminPage() {
                   <td className="px-4 py-3">
                     <p className="font-medium line-clamp-1">{post.title}</p>
                     <p className="text-xs text-muted-foreground font-mono mt-0.5">/blog/{post.slug}</p>
+                  </td>
+                  <td className="px-4 py-3 hidden sm:table-cell">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${seoScoreBadge(post.seoScore ?? 0)}`}>
+                      {post.seoScore ?? 0}
+                    </span>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     {(() => {
@@ -690,8 +800,8 @@ export default function BlogAdminPage() {
       {/* Create / Edit modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-border bg-background shadow-2xl my-8">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <div className="w-full max-w-6xl rounded-2xl border border-border bg-background shadow-2xl my-8 flex flex-col max-h-[calc(100vh-2rem)]">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
               <h2 className="text-lg font-bold">{isNew ? "New Post" : "Edit Post"}</h2>
               <button
                 onClick={closeForm}
@@ -701,7 +811,8 @@ export default function BlogAdminPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="p-6 space-y-5">
+            <div className="flex flex-1 min-h-0 overflow-hidden">
+              <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-5">
               {/* Title */}
               <div>
                 <label className="block text-sm font-medium mb-1.5">Title *</label>
@@ -900,18 +1011,6 @@ export default function BlogAdminPage() {
                 </div>
               </div>
 
-              {/* Meta description */}
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Meta Description</label>
-                <input
-                  value={form.metaDescription}
-                  onChange={(e) => setForm((f) => ({ ...f, metaDescription: e.target.value }))}
-                  placeholder="SEO description (max 300 chars)"
-                  maxLength={300}
-                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-
               {/* Publish options */}
               <div className="space-y-3">
                 <label className="block text-sm font-medium">Publishing</label>
@@ -954,7 +1053,7 @@ export default function BlogAdminPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 pb-2">
                 <button
                   type="button"
                   onClick={closeForm}
@@ -976,6 +1075,18 @@ export default function BlogAdminPage() {
                 </button>
               </div>
             </form>
+
+              {/* SEO Sidebar */}
+              <div className="hidden lg:flex w-80 xl:w-96 shrink-0 border-l border-border flex-col min-h-0">
+                <BlogSeoPanel
+                  postInput={seoPostInput}
+                  seoFields={seoFields}
+                  onSeoChange={handleSeoChange}
+                  onInsertLink={handleInsertLink}
+                  allPosts={allPostsForSeo}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -997,7 +1108,7 @@ export default function BlogAdminPage() {
             <div className="p-6 space-y-5">
               <p className="text-sm text-muted-foreground">
                 Upload an .xlsx or .xls file with columns for title and content.
-                Optional: slug, excerpt, author, category, coverImage, tags, metaDescription.
+                Optional: slug, excerpt, author, category, coverImage, tags, metaDescription, focusKeyword.
                 Imported posts are saved as drafts — publish them from the dashboard when ready.
                 Mentions of other post titles are auto-linked to <code className="text-xs">/blog/…</code> during import.
                 <strong>SprintsPlans</strong> is linked to <code className="text-xs">https://sprintsplans.com</code>.

@@ -11,6 +11,7 @@ const NAV = [
   { href: "/dashboard/users", label: "Users", icon: Users, exact: false },
   { href: "/dashboard/pages", label: "Pages", icon: FileText, exact: false },
   { href: "/dashboard/blog", label: "Blog", icon: BookOpen, exact: false },
+  { href: "/dashboard/blog/seo", label: "SEO", icon: BarChart3, exact: false },
   { href: "/dashboard/categories", label: "Categories", icon: FolderOpen, exact: false },
   { href: "/dashboard/nav-links", label: "Navigation", icon: Link2, exact: false },
 ];

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -55,6 +56,15 @@ export function RichTextEditor({ value, onChange, placeholder = "Start writingâ€
       },
     },
   });
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const current = editor.getHTML();
+    if (value === current) return;
+    // TipTap normalizes an empty doc to <p></p>; avoid resetting while typing.
+    if (!value && (current === "<p></p>" || current === "<p><br></p>")) return;
+    editor.commands.setContent(value || "", { emitUpdate: false });
+  }, [editor, value]);
 
   if (!editor) return null;
 

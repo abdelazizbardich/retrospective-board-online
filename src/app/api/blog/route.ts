@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllBlogPosts, createBlogPost, deleteBlogPosts, updateBlogPostsPublished, resolveBlogPublishState } from "@/lib/blog-store";
 import { requireAdmin } from "@/app/api/admin/auth/route";
+import { parseSeoFieldsFromBody } from "@/lib/seo/api-helpers";
+import { emptySeoFields } from "@/lib/seo/types";
 
 /** Returns null if the request is authorized (admin session OR API key), or an error response. */
 function authorize(request: NextRequest): NextResponse | null {
@@ -58,7 +60,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const seoDefaults = emptySeoFields();
     const post = await createBlogPost({
+      ...seoDefaults,
+      ...parseSeoFieldsFromBody(body),
       title: String(title).trim().slice(0, 200),
       slug: String(slug).trim().slice(0, 100),
       excerpt: String(excerpt ?? "").trim().slice(0, 500),
@@ -77,7 +82,10 @@ export async function POST(request: NextRequest) {
     if (err?.message?.includes("UNIQUE") || err?.code === "23505") {
       return NextResponse.json({ error: "A post with this slug already exists" }, { status: 409 });
     }
-    throw error;
+    return NextResponse.json(
+      { error: err?.message ?? "Failed to create post" },
+      { status: 500 }
+    );
   }
 }
 

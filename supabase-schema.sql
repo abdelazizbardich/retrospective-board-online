@@ -39,6 +39,21 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   cover_image      TEXT    NOT NULL DEFAULT '',
   tags             TEXT    NOT NULL DEFAULT '',
   meta_description TEXT    NOT NULL DEFAULT '',
+  focus_keyword    TEXT    NOT NULL DEFAULT '',
+  secondary_keywords TEXT  NOT NULL DEFAULT '',
+  seo_title        TEXT    NOT NULL DEFAULT '',
+  canonical_url    TEXT    NOT NULL DEFAULT '',
+  robots_index     BOOLEAN NOT NULL DEFAULT TRUE,
+  robots_follow    BOOLEAN NOT NULL DEFAULT TRUE,
+  og_title         TEXT    NOT NULL DEFAULT '',
+  og_description   TEXT    NOT NULL DEFAULT '',
+  og_image         TEXT    NOT NULL DEFAULT '',
+  twitter_title    TEXT    NOT NULL DEFAULT '',
+  twitter_description TEXT NOT NULL DEFAULT '',
+  twitter_image    TEXT    NOT NULL DEFAULT '',
+  schema_type      TEXT    NOT NULL DEFAULT 'BlogPosting',
+  seo_score        INTEGER NOT NULL DEFAULT 0,
+  seo_analysis     TEXT,
   published        BOOLEAN NOT NULL DEFAULT FALSE,
   scheduled_at     BIGINT,
   created_at       BIGINT  NOT NULL,
@@ -48,6 +63,21 @@ CREATE TABLE IF NOT EXISTS blog_posts (
 -- Existing DBs:
 -- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT '';
 -- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS scheduled_at BIGINT;
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS focus_keyword TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS secondary_keywords TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS seo_title TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS canonical_url TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS robots_index BOOLEAN NOT NULL DEFAULT TRUE;
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS robots_follow BOOLEAN NOT NULL DEFAULT TRUE;
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS og_title TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS og_description TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS og_image TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS twitter_title TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS twitter_description TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS twitter_image TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS schema_type TEXT NOT NULL DEFAULT 'BlogPosting';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS seo_score INTEGER NOT NULL DEFAULT 0;
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS seo_analysis TEXT;
 
 -- ─── Pages ───────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS pages (
