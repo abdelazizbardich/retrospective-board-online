@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent, useRef, useMemo } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { RichTextEditor } from "@/app/components/rich-text-editor";
 import { TagInput } from "@/app/components/tag-input";
 import { BlogSeoPanel, type SeoFormFields } from "@/app/components/blog-seo-panel";
@@ -15,7 +16,7 @@ import {
 } from "@/lib/import-blog";
 import { isPhantomLocalCoverPath } from "@/lib/blog-thumbnail";
 import {
-  Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink, X, Save, RefreshCw, Upload, Download, FileSpreadsheet, ImageIcon, Sparkles, Clock, BarChart3,
+  Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink, X, Save, RefreshCw, Upload, Download, FileSpreadsheet, ImageIcon, Sparkles, Clock, BarChart3, Search,
 } from "lucide-react";
 
 interface BlogPost {
@@ -50,6 +51,8 @@ interface BlogPost {
 }
 
 type PublishMode = "draft" | "now" | "schedule";
+type StatusFilter = "all" | "published" | "draft" | "scheduled";
+type BlogSort = "updatedAt" | "title" | "seoScore" | "category";
 
 function toDatetimeLocalValue(timestamp: number): string {
   const date = new Date(timestamp);
@@ -98,7 +101,16 @@ function slugify(str: string) {
     .slice(0, 100);
 }
 
+function getTableCoverImage(post: BlogPost): string {
+  const cover = post.coverImage.trim();
+  if (cover && !isPhantomLocalCoverPath(cover)) return cover;
+  return "";
+}
+
 export default function BlogAdminPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pendingEditSlug = useRef<string | null>(null);
   const [posts, setPosts]       = useState<BlogPost[]>([]);
   const [categories, setCategories] = useState<BlogCategory[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -127,6 +139,10 @@ export default function BlogAdminPage() {
   const [coverDragOver, setCoverDragOver] = useState(false);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   const [seoMigrated, setSeoMigrated] = useState<boolean | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sort, setSort] = useState<BlogSort>("updatedAt");
 
   useEffect(() => {
     setLoading(true);
@@ -143,6 +159,11 @@ export default function BlogAdminPage() {
       })
       .catch(() => setLoading(false));
   }, [refreshKey]);
+
+  useEffect(() => {
+    const editSlug = searchParams.get("edit");
+    if (editSlug) pendingEditSlug.current = editSlug;
+  }, [searchParams]);
 
   const openNew = () => {
     setIsNew(true);
@@ -187,6 +208,15 @@ export default function BlogAdminPage() {
     setCoverUploadError("");
     setCoverGenerating(false);
   };
+
+  useEffect(() => {
+    if (loading || !pendingEditSlug.current) return;
+    const post = posts.find((p) => p.slug === pendingEditSlug.current);
+    if (!post) return;
+    pendingEditSlug.current = null;
+    openEdit(post);
+    router.replace("/dashboard/blog", { scroll: false });
+  }, [loading, posts, router]);
 
   const closeForm = () => {
     setEditing(null);
@@ -335,10 +365,62 @@ export default function BlogAdminPage() {
     });
   };
 
+  const filteredPosts = useMemo(() => {
+    let result = [...posts];
+
+    if (statusFilter !== "all") {
+      result = result.filter((post) => getPostStatus(post) === statusFilter);
+    }
+
+    if (categoryFilter) {
+      result = result.filter((post) => post.category === categoryFilter);
+    }
+
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      result = result.filter(
+        (post) =>
+          post.title.toLowerCase().includes(query) ||
+          post.slug.toLowerCase().includes(query)
+      );
+    }
+
+    result.sort((a, b) => {
+      switch (sort) {
+        case "title":
+          return a.title.localeCompare(b.title);
+        case "seoScore":
+          return (b.seoScore ?? 0) - (a.seoScore ?? 0);
+        case "category":
+          return (a.category ?? "").localeCompare(b.category ?? "");
+        default:
+          return b.updatedAt - a.updatedAt;
+      }
+    });
+
+    return result;
+  }, [posts, statusFilter, categoryFilter, searchQuery, sort]);
+
+  const categoryOptions = useMemo(() => {
+    const names = new Set(categories.map((c) => c.name));
+    for (const post of posts) {
+      if (post.category) names.add(post.category);
+    }
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [categories, posts]);
+
   const toggleSelectAll = () => {
-    setSelectedSlugs((prev) =>
-      prev.size === posts.length ? new Set() : new Set(posts.map((p) => p.slug))
-    );
+    setSelectedSlugs((prev) => {
+      const filteredSlugs = filteredPosts.map((p) => p.slug);
+      const allSelected =
+        filteredSlugs.length > 0 && filteredSlugs.every((slug) => prev.has(slug));
+      if (allSelected) {
+        const next = new Set(prev);
+        for (const slug of filteredSlugs) next.delete(slug);
+        return next;
+      }
+      return new Set([...prev, ...filteredSlugs]);
+    });
   };
 
   const selectedPosts = posts.filter((p) => selectedSlugs.has(p.slug));
@@ -540,7 +622,11 @@ export default function BlogAdminPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Blog</h1>
-          <p className="text-muted-foreground text-sm mt-1">{posts.length} post{posts.length !== 1 ? "s" : ""}</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            {filteredPosts.length === posts.length
+              ? `${posts.length} post${posts.length !== 1 ? "s" : ""}`
+              : `${filteredPosts.length} of ${posts.length} post${posts.length !== 1 ? "s" : ""}`}
+          </p>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
           {selectedSlugs.size > 0 && (
@@ -644,6 +730,63 @@ export default function BlogAdminPage() {
           No posts yet — create your first one!
         </div>
       ) : (
+        <>
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative min-w-[200px] flex-1 sm:flex-none sm:w-64">
+              <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search title or slug..."
+                className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+            <div className="flex gap-1 flex-wrap">
+              {(["all", "published", "draft", "scheduled"] as StatusFilter[]).map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setStatusFilter(status)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                    statusFilter === status
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border hover:bg-muted"
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs"
+            >
+              <option value="">All categories</option>
+              {categoryOptions.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as BlogSort)}
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs"
+            >
+              <option value="updatedAt">Sort: Last Updated</option>
+              <option value="title">Sort: Title</option>
+              <option value="seoScore">Sort: SEO Score</option>
+              <option value="category">Sort: Category</option>
+            </select>
+          </div>
+
+          {filteredPosts.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-16 text-center text-muted-foreground text-sm">
+              No posts match this filter.
+            </div>
+          ) : (
         <div className="rounded-xl border border-border overflow-hidden bg-background">
           <table className="w-full text-sm">
             <thead>
@@ -651,15 +794,24 @@ export default function BlogAdminPage() {
                 <th className="w-10 px-4 py-3">
                   <input
                     type="checkbox"
-                    checked={posts.length > 0 && selectedSlugs.size === posts.length}
+                    checked={
+                      filteredPosts.length > 0 &&
+                      filteredPosts.every((post) => selectedSlugs.has(post.slug))
+                    }
                     ref={(el) => {
-                      if (el) el.indeterminate = selectedSlugs.size > 0 && selectedSlugs.size < posts.length;
+                      if (!el) return;
+                      const selectedCount = filteredPosts.filter((post) =>
+                        selectedSlugs.has(post.slug)
+                      ).length;
+                      el.indeterminate =
+                        selectedCount > 0 && selectedCount < filteredPosts.length;
                     }}
                     onChange={toggleSelectAll}
                     className="size-4 rounded border-border accent-primary cursor-pointer"
                     title="Select all"
                   />
                 </th>
+                <th className="w-14 px-2 py-3 text-left font-semibold text-muted-foreground">Image</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Title</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden sm:table-cell">SEO</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden sm:table-cell">Status</th>
@@ -671,10 +823,13 @@ export default function BlogAdminPage() {
               </tr>
             </thead>
             <tbody>
-              {posts.map((post, i) => (
+              {filteredPosts.map((post, i) => {
+                const coverImage = getTableCoverImage(post);
+
+                return (
                 <tr
                   key={post.id}
-                  className={`${i < posts.length - 1 ? "border-b border-border/60" : ""} ${selectedSlugs.has(post.slug) ? "bg-primary/5" : ""} hover:bg-muted/30 transition-colors`}
+                  className={`${i < filteredPosts.length - 1 ? "border-b border-border/60" : ""} ${selectedSlugs.has(post.slug) ? "bg-primary/5" : ""} hover:bg-muted/30 transition-colors`}
                 >
                   <td className="px-4 py-3">
                     <input
@@ -684,6 +839,22 @@ export default function BlogAdminPage() {
                       className="size-4 rounded border-border accent-primary cursor-pointer"
                       aria-label={`Select ${post.title}`}
                     />
+                  </td>
+                  <td className="px-2 py-3">
+                    {coverImage ? (
+                      <img
+                        src={coverImage}
+                        alt=""
+                        className="size-10 rounded-md border border-border object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="flex size-10 items-center justify-center rounded-md border border-dashed border-border bg-muted/50 text-muted-foreground"
+                        title="No cover image"
+                      >
+                        <ImageIcon className="size-4" />
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-medium line-clamp-1">{post.title}</p>
@@ -791,10 +962,13 @@ export default function BlogAdminPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>
+          )}
+        </>
       )}
 
       {/* Create / Edit modal */}

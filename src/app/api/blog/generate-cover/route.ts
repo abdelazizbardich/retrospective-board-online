@@ -2,6 +2,7 @@ import { fal } from "@fal-ai/client";
 import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/app/api/admin/auth/route";
+import { getBlobAuthOptions, isBlobConfigured } from "@/lib/blob-auth";
 
 function buildCoverPrompt(title: string, excerpt: string): string {
   const parts = [
@@ -28,9 +29,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!isBlobConfigured()) {
     return NextResponse.json(
-      { error: "Blob storage is not configured (missing BLOB_READ_WRITE_TOKEN)" },
+      {
+        error:
+          "Blob storage is not configured. Set BLOB_READ_WRITE_TOKEN or connect a Blob store with OIDC (run vercel env pull for local dev).",
+      },
       { status: 503 },
     );
   }
@@ -79,6 +83,7 @@ export async function POST(request: NextRequest) {
     const blob = await put(pathname, imageBuffer, {
       access: "public",
       contentType: "image/jpeg",
+      ...getBlobAuthOptions(),
     });
 
     return NextResponse.json({ url: blob.url });

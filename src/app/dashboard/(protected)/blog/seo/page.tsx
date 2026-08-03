@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Pencil,
 } from "lucide-react";
+import { getIssueTooltip } from "@/lib/seo/issue-tooltips";
 
 interface DashboardSummary {
   averageScore: number;
@@ -55,6 +56,27 @@ function scoreBadge(score: number) {
   if (score >= 60) return "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400";
   if (score >= 40) return "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400";
   return "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400";
+}
+
+function IssueBadge({ label }: { label: string }) {
+  const tooltip = getIssueTooltip(label);
+
+  return (
+    <span className="group relative inline-flex">
+      <span
+        title={tooltip}
+        className="inline-flex cursor-help rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-400"
+      >
+        {label}
+      </span>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 w-52 -translate-x-1/2 rounded-lg border border-border bg-background px-2.5 py-2 text-xs leading-relaxed text-muted-foreground opacity-0 shadow-lg transition-all duration-150 translate-y-0.5 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0"
+      >
+        {tooltip}
+      </span>
+    </span>
+  );
 }
 
 export default function SeoDashboardPage() {
@@ -169,7 +191,7 @@ export default function SeoDashboardPage() {
             </select>
           </div>
 
-          <div className="rounded-xl border border-border overflow-hidden bg-background">
+          <div className="rounded-xl border border-border overflow-x-auto bg-background">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/40">
@@ -228,9 +250,7 @@ export default function SeoDashboardPage() {
                           {issues.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {issues.map((issue) => (
-                                <span key={issue as string} className="inline-flex rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-medium">
-                                  {issue}
-                                </span>
+                                <IssueBadge key={issue as string} label={issue as string} />
                               ))}
                             </div>
                           ) : (
@@ -249,9 +269,9 @@ export default function SeoDashboardPage() {
                               </Link>
                             )}
                             <Link
-                              href="/dashboard/blog"
+                              href={`/dashboard/blog?edit=${post.slug}`}
                               className="flex size-7 items-center justify-center rounded-lg border border-border hover:border-primary/40 hover:text-primary transition-colors"
-                              title="Edit in Blog admin"
+                              title="Edit post"
                             >
                               <Pencil className="size-3.5" />
                             </Link>
