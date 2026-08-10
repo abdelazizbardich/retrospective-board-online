@@ -9,7 +9,10 @@ import Placeholder from "@tiptap/extension-placeholder";
 import {
   Bold, Italic, Strikethrough, Code, List, ListOrdered,
   Heading1, Heading2, Heading3, Quote, Minus, Undo, Redo, Link2, Link2Off, ImageIcon,
+  Type, FileCode,
 } from "lucide-react";
+
+type EditorMode = "text" | "code";
 
 interface RichTextEditorProps {
   value: string;
@@ -50,9 +53,11 @@ export function RichTextEditor({
   uploadSlug = "content",
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<EditorMode>("text");
   const [imageUploading, setImageUploading] = useState(false);
   const [imageGenerating, setImageGenerating] = useState(false);
   const insertPosRef = useRef<number | null>(null);
+  const isCodeMode = mode === "code";
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -74,13 +79,25 @@ export function RichTextEditor({
   });
 
   useEffect(() => {
-    if (!editor || editor.isDestroyed) return;
+    if (!editor || editor.isDestroyed || mode !== "text") return;
     const current = editor.getHTML();
     if (value === current) return;
     // TipTap normalizes an empty doc to <p></p>; avoid resetting while typing.
     if (!value && (current === "<p></p>" || current === "<p><br></p>")) return;
     editor.commands.setContent(value || "", { emitUpdate: false });
-  }, [editor, value]);
+  }, [editor, value, mode]);
+
+  const switchToTextMode = () => {
+    if (!editor || mode === "text") return;
+    editor.commands.setContent(value || "", { emitUpdate: false });
+    setMode("text");
+  };
+
+  const switchToCodeMode = () => {
+    if (!editor || mode === "code") return;
+    onChange(editor.getHTML());
+    setMode("code");
+  };
 
   if (!editor) return null;
 
@@ -208,52 +225,52 @@ export function RichTextEditor({
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-muted/30 px-2 py-1.5">
-        <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Bold">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} disabled={isCodeMode} title="Bold">
           <Bold className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} title="Italic">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} disabled={isCodeMode} title="Italic">
           <Italic className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive("strike")} title="Strikethrough">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive("strike")} disabled={isCodeMode} title="Strikethrough">
           <Strikethrough className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive("code")} title="Inline code">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive("code")} disabled={isCodeMode} title="Inline code">
           <Code className="size-3.5" />
         </ToolbarButton>
 
         <span className="mx-1 h-5 w-px bg-border" />
 
-        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} title="Heading 1">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} disabled={isCodeMode} title="Heading 1">
           <Heading1 className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Heading 2">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} disabled={isCodeMode} title="Heading 2">
           <Heading2 className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Heading 3">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} disabled={isCodeMode} title="Heading 3">
           <Heading3 className="size-3.5" />
         </ToolbarButton>
 
         <span className="mx-1 h-5 w-px bg-border" />
 
-        <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} title="Bullet list">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} disabled={isCodeMode} title="Bullet list">
           <List className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} title="Ordered list">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} disabled={isCodeMode} title="Ordered list">
           <ListOrdered className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} title="Blockquote">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} disabled={isCodeMode} title="Blockquote">
           <Quote className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Horizontal rule">
+        <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} disabled={isCodeMode} title="Horizontal rule">
           <Minus className="size-3.5" />
         </ToolbarButton>
 
         <span className="mx-1 h-5 w-px bg-border" />
 
-        <ToolbarButton onClick={setLink} active={editor.isActive("link")} title="Set link">
+        <ToolbarButton onClick={setLink} active={editor.isActive("link")} disabled={isCodeMode} title="Set link">
           <Link2 className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().unsetLink().run()} disabled={!editor.isActive("link")} title="Remove link">
+        <ToolbarButton onClick={() => editor.chain().focus().unsetLink().run()} disabled={isCodeMode || !editor.isActive("link")} title="Remove link">
           <Link2Off className="size-3.5" />
         </ToolbarButton>
 
@@ -261,7 +278,7 @@ export function RichTextEditor({
 
         <ToolbarButton
           onClick={addImage}
-          disabled={imageUploading || imageGenerating}
+          disabled={isCodeMode || imageUploading || imageGenerating}
           title={
             imageGenerating
               ? "Generating image…"
@@ -275,16 +292,37 @@ export function RichTextEditor({
 
         <span className="mx-1 h-5 w-px bg-border" />
 
-        <ToolbarButton onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Undo">
+        <ToolbarButton onClick={() => editor.chain().focus().undo().run()} disabled={isCodeMode || !editor.can().undo()} title="Undo">
           <Undo className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title="Redo">
+        <ToolbarButton onClick={() => editor.chain().focus().redo().run()} disabled={isCodeMode || !editor.can().redo()} title="Redo">
           <Redo className="size-3.5" />
         </ToolbarButton>
+
+        <span className="mx-1 h-5 w-px bg-border" />
+
+        <div className="ml-auto flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5">
+          <ToolbarButton onClick={switchToTextMode} active={mode === "text"} title="Text mode">
+            <Type className="size-3.5" />
+          </ToolbarButton>
+          <ToolbarButton onClick={switchToCodeMode} active={mode === "code"} title="Code mode">
+            <FileCode className="size-3.5" />
+          </ToolbarButton>
+        </div>
       </div>
 
       {/* Editor area */}
-      <EditorContent editor={editor} />
+      {isCodeMode ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          spellCheck={false}
+          className="min-h-[320px] w-full resize-y bg-background px-4 py-3 font-mono text-sm leading-relaxed text-foreground focus:outline-none"
+        />
+      ) : (
+        <EditorContent editor={editor} />
+      )}
     </div>
   );
 }
