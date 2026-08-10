@@ -20,6 +20,7 @@ interface DashboardSummary {
   missingMetaDescriptions: number;
   missingFocusKeywords: number;
   missingFeaturedImages: number;
+  missingCoverAltTexts: number;
   noInternalLinks: number;
   orphanArticles: number;
   duplicateSeoTitles: number;
@@ -43,6 +44,7 @@ interface DashboardPost {
   missingMeta: boolean;
   missingFocusKeyword: boolean;
   missingCover: boolean;
+  missingCoverAlt: boolean;
   noInternalLinks: boolean;
   titleTooLong: boolean;
   metaTooLong: boolean;
@@ -108,6 +110,7 @@ export default function SeoDashboardPage() {
         { label: "Missing Meta", value: summary.missingMetaDescriptions },
         { label: "Missing Focus Keyword", value: summary.missingFocusKeywords },
         { label: "Missing Cover Image", value: summary.missingFeaturedImages },
+        { label: "Missing Cover Alt", value: summary.missingCoverAltTexts },
         { label: "No Internal Links", value: summary.noInternalLinks },
         { label: "Orphan Articles", value: summary.orphanArticles },
         { label: "Duplicate SEO Titles", value: summary.duplicateSeoTitles },
@@ -217,6 +220,7 @@ export default function SeoDashboardPage() {
                       post.missingMeta && "No meta",
                       post.missingFocusKeyword && "No keyword",
                       post.missingCover && "No cover",
+                      post.missingCoverAlt && "No cover alt",
                       post.noInternalLinks && "No links",
                       post.isOrphan && "Orphan",
                       post.titleTooLong && "Long title",

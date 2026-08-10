@@ -15,7 +15,7 @@ export const SEO_CATEGORY_TOOLTIPS: Record<string, string> = {
   "Readability":
     "How easy the post is to read. Checks sentence length, paragraph length, and passive voice.",
   "Images":
-    "Visual content SEO. Checks that images are present and include descriptive alt text.",
+    "Visual content SEO. Checks that a cover image is set with descriptive alt text, and that body images include alt text.",
   "URL / Slug":
     "The post permalink. Checks length, keyword inclusion, and a clean, readable format.",
   Schema:

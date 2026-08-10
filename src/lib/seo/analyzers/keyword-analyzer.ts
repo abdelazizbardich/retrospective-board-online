@@ -50,7 +50,9 @@ export function analyzeKeywords(
     },
     {
       label: "image alt text",
-      passed: content.images.some((img) => keywordInText(focus, img.alt)),
+      passed:
+        content.images.some((img) => keywordInText(focus, img.alt)) ||
+        keywordInText(focus, input.coverImageAlt),
     },
     { label: "body content", passed: keywordInText(focus, content.plainText) },
     { label: "conclusion", passed: keywordInText(focus, getConclusion(content)) },
@@ -77,6 +79,44 @@ export function analyzeKeywords(
   const ratio = score / maxScore;
   const status = stuffed ? "warning" : statusFromScore(ratio);
 
+  const detailedChecks = checks.map((c) => ({
+    label: c.label,
+    passed: c.passed,
+    fix: c.passed
+      ? undefined
+      : c.label === "SEO title"
+        ? `Add "${focus}" to the SEO title field.`
+        : c.label === "H1 title"
+          ? `Include "${focus}" in the post title.`
+          : c.label === "introduction"
+            ? `Mention "${focus}" in the opening paragraph.`
+            : c.label === "first 10% of content"
+              ? `Use "${focus}" early in the article (first few paragraphs).`
+              : c.label === "meta description"
+                ? `Add "${focus}" to the meta description.`
+                : c.label === "URL slug"
+                  ? `Include key terms from "${focus}" in the URL slug.`
+                  : c.label === "heading (H2/H3)"
+                    ? `Add an H2 or H3 subheading that includes "${focus}".`
+                    : c.label === "image alt text"
+                      ? `Add "${focus}" naturally to the cover image alt text or at least one content image alt.`
+                      : c.label === "body content"
+                        ? `Use "${focus}" naturally throughout the article body.`
+                        : c.label === "conclusion"
+                          ? `Mention "${focus}" in the closing paragraph.`
+                          : `Add "${focus}" to your ${c.label}.`,
+  }));
+
+  if (stuffed) {
+    detailedChecks.push({
+      label: `Keyword density not too high (currently overused)`,
+      passed: false,
+      fix: `Reduce repetition of "${focus}" — use synonyms or related phrases instead.`,
+    });
+  }
+
+  const failedChecks = detailedChecks.filter((c) => !c.passed);
+
   return {
     score: clampScore(score, maxScore),
     maxScore,
@@ -87,17 +127,15 @@ export function analyzeKeywords(
       : missing.length === 0
         ? `Focus keyword "${focus}" is well distributed.`
         : `Focus keyword missing from: ${missing.join(", ")}.`,
-    problem: stuffed
-      ? `Keyword "${focus}" appears too frequently and may look unnatural.`
-      : missing.length > 0
-        ? `Focus keyword is missing from: ${missing.join(", ")}.`
-        : undefined,
+    problem:
+      stuffed
+        ? `Keyword "${focus}" appears too frequently and may look unnatural.`
+        : failedChecks.length > 0
+          ? `Focus keyword is missing from: ${missing.join(", ")}.`
+          : undefined,
     whyItMatters:
       "Natural keyword placement helps search engines understand your topic without keyword stuffing penalties.",
-    howToFix: stuffed
-      ? `Reduce repetition of "${focus}" and use synonyms or related terms instead.`
-      : missing.length > 0
-        ? `Add "${focus}" naturally to your ${missing[0]}.`
-        : undefined,
+    howToFix: failedChecks[0]?.fix,
+    checks: detailedChecks,
   };
 }

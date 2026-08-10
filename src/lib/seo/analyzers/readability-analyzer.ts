@@ -73,21 +73,77 @@ export function analyzeReadability(
   const status = statusFromScore(ratio);
   const readabilityRating = getReadabilityRating((score / maxScore) * 100);
 
+  const checks = [
+    {
+      label:
+        avgSentence <= 20
+          ? `Avg sentence length OK (${avgSentence.toFixed(0)} words)`
+          : avgSentence <= 25
+            ? `Avg sentence length acceptable (${avgSentence.toFixed(0)} words — aim for ≤20)`
+            : `Sentences too long on average (${avgSentence.toFixed(0)} words)`,
+      passed: avgSentence <= 20,
+      fix: "Break long sentences into shorter ones (aim for ≤20 words per sentence).",
+    },
+    {
+      label:
+        longSentences === 0
+          ? "No sentences over 25 words"
+          : `${longSentences} sentence(s) exceed 25 words`,
+      passed: longSentences <= 3,
+      fix: `Split ${longSentences} long sentence(s) into shorter, clearer ones.`,
+    },
+    {
+      label:
+        avgParaLen <= 80
+          ? `Paragraph length OK (avg ${Math.round(avgParaLen)} words)`
+          : `Paragraphs too long (avg ${Math.round(avgParaLen)} words)`,
+      passed: avgParaLen <= 80,
+      fix: "Split long paragraphs into smaller chunks of 2–4 sentences.",
+    },
+    {
+      label:
+        passiveRatio < 2
+          ? "Passive voice usage is low"
+          : `Passive voice used frequently (${passive} instances)`,
+      passed: passiveRatio < 2,
+      fix: "Rewrite passive sentences in active voice (e.g. “We recommend…” instead of “It is recommended…”).",
+    },
+    {
+      label:
+        transitions >= 3
+          ? `Uses transition words (${transitions} found)`
+          : `Few transition words (${transitions} — aim for 3+)`,
+      passed: transitions >= 3,
+      fix: "Add transition words (however, therefore, for example) to improve flow between ideas.",
+    },
+    {
+      label: content.headings.length >= 2 ? "Headings break up content" : "Few headings for readability",
+      passed: content.headings.length >= 2,
+      fix: "Add subheadings to make the article easier to scan.",
+    },
+    {
+      label:
+        content.hasBulletList || content.hasNumberedList
+          ? "Uses lists for scannability"
+          : "No bullet or numbered lists",
+      passed: content.hasBulletList || content.hasNumberedList,
+      fix: "Use bullet or numbered lists for steps, tips, or grouped points.",
+    },
+  ];
+
+  const failedChecks = checks.filter((c) => !c.passed);
+
   return {
     score: clampScore(score, maxScore),
     maxScore,
     status,
     title: "Readability",
     message: `Readability: ${readabilityRating}. Avg sentence: ${avgSentence.toFixed(0)} words.`,
-    problem: issues.length > 0 ? issues.join("; ") : undefined,
+    problem: failedChecks.length > 0 ? failedChecks.map((c) => c.label).join("; ") : undefined,
     whyItMatters:
       "Readable content keeps users engaged and signals quality to search engines.",
-    howToFix:
-      longSentences > 3
-        ? "Break long sentences into shorter ones and use bullet lists where appropriate."
-        : avgParaLen > 80
-          ? "Split long paragraphs into smaller chunks of 2–4 sentences."
-          : undefined,
+    howToFix: failedChecks[0]?.fix,
     readabilityRating,
+    checks,
   };
 }

@@ -54,18 +54,49 @@ export function analyzeContent(
   if (wordCount < 300) lengthLabel = "may be too short";
   else if (wordCount >= 1500) lengthLabel = "comprehensive";
 
+  const checks = [
+    {
+      label:
+        wordCount >= 800
+          ? `Substantial length (${wordCount} words)`
+          : wordCount >= 300
+            ? `Moderate length (${wordCount} words — aim for 800+)`
+            : `Too short (${wordCount} words — aim for 300+)`,
+      passed: wordCount >= 800,
+      fix:
+        wordCount < 300
+          ? "Expand to at least 300 words with useful, relevant content."
+          : "Add more depth — comprehensive articles typically have 800+ words.",
+    },
+    {
+      label: `At least 3 paragraphs (currently ${content.paragraphs.length})`,
+      passed: content.paragraphs.length >= 3,
+      fix: "Break content into at least 3 distinct paragraphs.",
+    },
+    {
+      label: `At least 2 headings (currently ${content.headings.length})`,
+      passed: content.headings.length >= 2,
+      fix: "Add H2/H3 subheadings to structure the article.",
+    },
+    {
+      label: "Excerpt / summary provided",
+      passed: input.excerpt.trim().length > 20,
+      fix: "Write a short excerpt (20+ characters) that summarizes the post.",
+    },
+  ];
+
+  const failedChecks = checks.filter((c) => !c.passed);
+
   return {
     score: clampScore(score, maxScore),
     maxScore,
     status,
     title: "Content Quality",
     message: `${wordCount} words · ~${readingTime} min read · ${content.paragraphs.length} paragraphs · Content length is ${lengthLabel}.`,
-    problem: issues.length > 0 ? issues[0] : undefined,
+    problem: failedChecks.length > 0 ? failedChecks.map((c) => c.label).join("; ") : undefined,
     whyItMatters:
       "Content depth should match search intent — comprehensive guides need more words than quick answers.",
-    howToFix:
-      wordCount < 300
-        ? "Expand the article with useful sections that address related questions readers may have."
-        : undefined,
+    howToFix: failedChecks[0]?.fix,
+    checks,
   };
 }

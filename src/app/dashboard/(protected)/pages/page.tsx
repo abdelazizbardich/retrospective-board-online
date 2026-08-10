@@ -280,6 +280,7 @@ export default function PagesAdminPage() {
                     value={form.content}
                     onChange={(html) => setForm((f) => ({ ...f, content: html }))}
                     placeholder="Write your page content here…"
+                    uploadSlug={form.slug || slugify(form.title) || "content"}
                   />
                 </div>
               </div>

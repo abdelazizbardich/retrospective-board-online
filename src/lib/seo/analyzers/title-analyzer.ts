@@ -59,11 +59,57 @@ export function analyzeTitle(
     score += 2;
   }
 
+  const lenIdeal = len >= 50 && len <= 60;
+  const keywordInTitle = focus ? keywordInText(focus, title) : false;
+  const keywordNearStart = focus ? keywordNearBeginning(focus, title) : false;
+  const hasPower = hasPowerWords(title);
+  const hasNum = hasNumbers(title);
+  const isUnique = duplicates.length <= 1;
+
+  const checks = [
+    {
+      label: `Length 50–60 characters (currently ${len})`,
+      passed: lenIdeal,
+      fix: len < 50 ? "Expand the title to at least 50 characters." : "Shorten to 50–60 characters to avoid truncation in search results.",
+    },
+    ...(focus
+      ? [
+          {
+            label: `Focus keyword "${focus}" in title`,
+            passed: keywordInTitle,
+            fix: `Add "${focus}" to the SEO title.`,
+          },
+          {
+            label: "Focus keyword near the beginning",
+            passed: keywordNearStart,
+            fix: `Move "${focus}" closer to the start of the title (within the first ~30 characters).`,
+          },
+        ]
+      : []),
+    {
+      label: "Uses a power word (e.g. guide, best, how)",
+      passed: hasPower,
+      fix: "Add an engaging word like “guide”, “best”, or “how to” to improve click-through rate.",
+    },
+    {
+      label: "Includes a number",
+      passed: hasNum,
+      fix: "Add a number if relevant (e.g. “5 tips”, “2026 guide”) — numbers often boost clicks.",
+    },
+    {
+      label: "Unique across your blog posts",
+      passed: isUnique,
+      fix: "Another post uses this exact title — write a unique SEO title for this article.",
+    },
+  ];
+
   const ratio = score / maxScore;
   const status = statusFromScore(ratio);
   const finalScore = clampScore(score, maxScore);
+  const failedChecks = checks.filter((c) => !c.passed);
 
-  return {    score: finalScore,
+  return {
+    score: finalScore,
     maxScore,
     status,
     title: "SEO Title",
@@ -71,13 +117,12 @@ export function analyzeTitle(
       issues.length === 0
         ? `SEO title looks good (${len} characters).`
         : `SEO title needs work: ${issues.join(", ")}.`,
-    problem: issues.length > 0 ? `SEO title issues: ${issues.join(", ")}.` : undefined,
+    problem:
+      failedChecks.length > 0
+        ? failedChecks.map((c) => c.label).join("; ")
+        : undefined,
     whyItMatters: "Search engines and users rely on the title to understand and click your result.",
-    howToFix:
-      focus && !keywordInText(focus, title)
-        ? `Add "${focus}" naturally near the beginning of your SEO title.`
-        : len > 70
-          ? "Shorten your SEO title to around 50–60 characters."
-          : undefined,
+    howToFix: failedChecks[0]?.fix,
+    checks,
   };
 }

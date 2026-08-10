@@ -27,6 +27,34 @@ export function analyzeSocial(input: SeoPostInput): SeoAnalysisResult {
   const ratio = score / maxScore;
   const status = statusFromScore(ratio);
 
+  const checks = [
+    {
+      label: ogTitle.trim() ? "Open Graph title set" : "Open Graph title missing",
+      passed: !!ogTitle.trim(),
+      fix: "Set an Open Graph title (or fill in SEO title — it will be used as fallback).",
+    },
+    {
+      label: ogDesc.trim() ? "Open Graph description set" : "Open Graph description missing",
+      passed: !!ogDesc.trim(),
+      fix: "Set an Open Graph description (or fill in meta description).",
+    },
+    {
+      label: ogImage.trim() ? "Open Graph image set" : "Open Graph image missing",
+      passed: !!ogImage.trim(),
+      fix: "Add an Open Graph image (1200×630 recommended) or set a cover image.",
+    },
+    {
+      label:
+        twTitle.trim() && twDesc.trim()
+          ? "Twitter card title and description set"
+          : "Twitter card fields incomplete",
+      passed: !!(twTitle.trim() && twDesc.trim()),
+      fix: "Fill in Twitter title and description (or they will fall back to Open Graph fields).",
+    },
+  ];
+
+  const failedChecks = checks.filter((c) => !c.passed);
+
   return {
     score: clampScore(score, maxScore),
     maxScore,
@@ -36,14 +64,10 @@ export function analyzeSocial(input: SeoPostInput): SeoAnalysisResult {
       issues.length === 0
         ? "Social sharing metadata is configured."
         : `Social SEO issues: ${issues.join(", ")}.`,
-    problem: issues.length > 0 ? issues.join("; ") : undefined,
+    problem: failedChecks.length > 0 ? failedChecks.map((c) => c.label).join("; ") : undefined,
     whyItMatters:
       "Open Graph and Twitter metadata control how your article appears when shared on social platforms.",
-    howToFix:
-      !ogImage.trim()
-        ? "Add an Open Graph image (1200×630 recommended) for better social previews."
-        : !ogDesc.trim()
-          ? "Add an Open Graph description for social sharing."
-          : undefined,
+    howToFix: failedChecks[0]?.fix,
+    checks,
   };
 }

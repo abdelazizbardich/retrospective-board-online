@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Calendar, User } from "lucide-react";
 import type { BlogPost } from "@/lib/blog-store";
-import { getPostCoverImage } from "@/lib/blog-thumbnail";
+import { getPostCoverImage, getPostCoverImageAlt } from "@/lib/blog-thumbnail";
 import { BlogCategoryLink } from "@/app/components/blog-category-link";
 import { BlogTagLink } from "@/app/components/blog-tag-link";
 
 export function BlogPostCard({ post }: Readonly<{ post: BlogPost }>) {
   const coverImage = getPostCoverImage(post);
+  const coverImageAlt = getPostCoverImageAlt(post);
   const tags = post.tags
     ? post.tags
         .split(",")
@@ -21,7 +22,7 @@ export function BlogPostCard({ post }: Readonly<{ post: BlogPost }>) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={coverImage}
-          alt={post.title}
+          alt={coverImageAlt}
           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
       </Link>

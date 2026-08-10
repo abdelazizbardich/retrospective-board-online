@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   author           TEXT    NOT NULL DEFAULT '',
   category         TEXT    NOT NULL DEFAULT '',
   cover_image      TEXT    NOT NULL DEFAULT '',
+  cover_image_alt  TEXT    NOT NULL DEFAULT '',
   tags             TEXT    NOT NULL DEFAULT '',
   meta_description TEXT    NOT NULL DEFAULT '',
   focus_keyword    TEXT    NOT NULL DEFAULT '',

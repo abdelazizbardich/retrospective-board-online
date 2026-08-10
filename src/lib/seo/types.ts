@@ -1,5 +1,12 @@
 export type SeoStatus = "passed" | "warning" | "failed";
 
+export interface SeoCheckItem {
+  label: string;
+  passed: boolean;
+  /** Short hint shown when this check failed or only partially passed */
+  fix?: string;
+}
+
 export interface SeoAnalysisResult {
   score: number;
   maxScore: number;
@@ -10,6 +17,8 @@ export interface SeoAnalysisResult {
   problem?: string;
   whyItMatters?: string;
   howToFix?: string;
+  /** Per-criterion breakdown so authors know exactly what to improve */
+  checks?: SeoCheckItem[];
 }
 
 export interface SeoRecommendation {
@@ -34,6 +43,7 @@ export interface SeoPostInput {
   excerpt: string;
   content: string;
   coverImage: string;
+  coverImageAlt: string;
   tags: string;
   category: string;
   author: string;

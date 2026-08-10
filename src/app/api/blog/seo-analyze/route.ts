@@ -11,6 +11,7 @@ function parseSeoInput(body: Record<string, unknown>): SeoPostInput {
     excerpt: String(body.excerpt ?? ""),
     content: String(body.content ?? ""),
     coverImage: String(body.coverImage ?? ""),
+    coverImageAlt: String(body.coverImageAlt ?? ""),
     tags: String(body.tags ?? ""),
     category: String(body.category ?? ""),
     author: String(body.author ?? ""),

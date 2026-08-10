@@ -61,6 +61,9 @@ export async function GET(request: NextRequest) {
       missingMeta: !post.metaDescription.trim(),
       missingFocusKeyword: !post.focusKeyword.trim(),
       missingCover: !post.coverImage.trim(),
+      missingCoverAlt:
+        !!post.coverImage.trim() &&
+        (!post.coverImageAlt.trim() || post.coverImageAlt.trim().length < 5),
       noInternalLinks: internalBlogLinks.length === 0,
     };
   });
@@ -93,6 +96,7 @@ export async function GET(request: NextRequest) {
       missingMetaDescriptions: items.filter((i) => i.missingMeta).length,
       missingFocusKeywords: items.filter((i) => i.missingFocusKeyword).length,
       missingFeaturedImages: items.filter((i) => i.missingCover).length,
+      missingCoverAltTexts: items.filter((i) => i.missingCoverAlt).length,
       noInternalLinks: items.filter((i) => i.noInternalLinks).length,
       orphanArticles: orphans.length,
       duplicateSeoTitles: duplicateSeoTitles.length,

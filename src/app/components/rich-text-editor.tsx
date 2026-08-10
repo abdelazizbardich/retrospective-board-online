@@ -1,19 +1,22 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
   Bold, Italic, Strikethrough, Code, List, ListOrdered,
-  Heading1, Heading2, Heading3, Quote, Minus, Undo, Redo, Link2, Link2Off,
+  Heading1, Heading2, Heading3, Quote, Minus, Undo, Redo, Link2, Link2Off, ImageIcon,
 } from "lucide-react";
 
 interface RichTextEditorProps {
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  /** Used to organize uploaded content images in blob storage. */
+  uploadSlug?: string;
 }
 
 function ToolbarButton({
@@ -40,12 +43,25 @@ function ToolbarButton({
   );
 }
 
-export function RichTextEditor({ value, onChange, placeholder = "Start writing…" }: RichTextEditorProps) {
+export function RichTextEditor({
+  value,
+  onChange,
+  placeholder = "Start writing…",
+  uploadSlug = "content",
+}: RichTextEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageGenerating, setImageGenerating] = useState(false);
+  const insertPosRef = useRef<number | null>(null);
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false, HTMLAttributes: { class: "text-primary underline hover:opacity-80", rel: "noopener noreferrer" } }),
+      Image.configure({
+        HTMLAttributes: { class: "rounded-lg max-w-full h-auto my-4" },
+      }),
       Placeholder.configure({ placeholder }),
     ],
     content: value || "",
@@ -76,8 +92,120 @@ export function RichTextEditor({ value, onChange, placeholder = "Start writing�
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
+  const insertImage = (src: string, alt = "") => {
+    const pos = insertPosRef.current ?? editor.state.selection.from;
+    editor
+      .chain()
+      .focus()
+      .setTextSelection(pos)
+      .setImage({ src, alt: alt || undefined })
+      .run();
+    insertPosRef.current = null;
+  };
+
+  const rememberInsertPosition = () => {
+    insertPosRef.current = editor.state.selection.from;
+  };
+
+  const addImage = async () => {
+    rememberInsertPosition();
+
+    const wantGenerate = window.confirm(
+      "Generate an image from a description?\n\nClick OK to describe the image, or Cancel to upload a file or paste a URL.",
+    );
+
+    if (wantGenerate) {
+      const description = window.prompt("Describe the image you want to generate");
+      if (!description?.trim()) {
+        insertPosRef.current = null;
+        return;
+      }
+
+      setImageGenerating(true);
+      try {
+        const res = await fetch("/api/blog/generate-content-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ description: description.trim(), slug: uploadSlug }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          window.alert(data.error ?? "Image generation failed");
+          return;
+        }
+        insertImage(data.url, description.trim());
+      } catch {
+        window.alert("Image generation failed");
+      } finally {
+        setImageGenerating(false);
+      }
+      return;
+    }
+
+    const url = window.prompt("Image URL (leave empty to upload a file)");
+    if (url === null) {
+      insertPosRef.current = null;
+      return;
+    }
+    if (url.trim()) {
+      const alt = window.prompt("Alt text (optional)", "") ?? "";
+      insertImage(url.trim(), alt.trim());
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) {
+      insertPosRef.current = null;
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      window.alert("Please upload an image file (JPEG, PNG, WebP, or GIF)");
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      window.alert("Image must be under 4 MB");
+      return;
+    }
+
+    setImageUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("slug", uploadSlug);
+      body.append("folder", "content");
+
+      const res = await fetch("/api/blog/upload", { method: "POST", body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        window.alert(data.error ?? "Upload failed");
+        return;
+      }
+
+      const defaultAlt = file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+      const alt = window.prompt("Alt text (optional)", defaultAlt) ?? "";
+      insertImage(data.url, alt.trim());
+    } catch {
+      window.alert("Upload failed");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   return (
     <div className="overflow-hidden rounded-xl border border-border focus-within:ring-2 focus-within:ring-primary/40">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={handleImageFile}
+      />
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-muted/30 px-2 py-1.5">
         <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Bold">
@@ -127,6 +255,22 @@ export function RichTextEditor({ value, onChange, placeholder = "Start writing�
         </ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().unsetLink().run()} disabled={!editor.isActive("link")} title="Remove link">
           <Link2Off className="size-3.5" />
+        </ToolbarButton>
+
+        <span className="mx-1 h-5 w-px bg-border" />
+
+        <ToolbarButton
+          onClick={addImage}
+          disabled={imageUploading || imageGenerating}
+          title={
+            imageGenerating
+              ? "Generating image…"
+              : imageUploading
+                ? "Uploading image…"
+                : "Insert image"
+          }
+        >
+          <ImageIcon className="size-3.5" />
         </ToolbarButton>
 
         <span className="mx-1 h-5 w-px bg-border" />

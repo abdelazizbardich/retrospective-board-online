@@ -33,6 +33,39 @@ export function analyzeInternalLinks(
   const ratio = score / maxScore;
   const status = statusFromScore(ratio);
 
+  const checks = [
+    {
+      label:
+        blogLinks.length >= 3
+          ? `${blogLinks.length} internal blog links (excellent)`
+          : blogLinks.length >= 2
+            ? `${blogLinks.length} internal blog links (good)`
+            : blogLinks.length >= 1
+              ? `Only ${blogLinks.length} internal blog link (aim for 2–4)`
+              : "No internal blog links",
+      passed: blogLinks.length >= 2,
+      fix: "Add 2–4 links to other blog posts on your site.",
+    },
+    {
+      label:
+        blogLinks.length === 0 || descriptive.length === blogLinks.length
+          ? "All anchor text is descriptive"
+          : "Some anchor text is generic (click here, read more…)",
+      passed: blogLinks.length === 0 || descriptive.length === blogLinks.length,
+      fix: "Replace generic links like “click here” with descriptive phrases about the linked article.",
+    },
+    {
+      label:
+        blogLinks.length >= 3
+          ? "3+ blog links for strong internal linking"
+          : `${blogLinks.length}/3 recommended blog links`,
+      passed: blogLinks.length >= 3,
+      fix: "Add more relevant links to related articles (3+ is ideal).",
+    },
+  ];
+
+  const failedChecks = checks.filter((c) => !c.passed);
+
   return {
     score: clampScore(score, maxScore),
     maxScore,
@@ -43,16 +76,12 @@ export function analyzeInternalLinks(
         ? `${blogLinks.length} internal blog links found.`
         : `Only ${blogLinks.length} internal blog link${blogLinks.length !== 1 ? "s" : ""} found.`,
     problem:
-      blogLinks.length < 2
-        ? `Your article contains only ${blogLinks.length} internal link${blogLinks.length !== 1 ? "s" : ""}.`
-        : genericAnchors.length > 0
-          ? "Some internal links use generic anchor text like 'click here'."
-          : undefined,
+      failedChecks.length > 0
+        ? failedChecks.map((c) => c.label).join("; ")
+        : undefined,
     whyItMatters:
       "Internal links help distribute authority and guide readers to related content on your site.",
-    howToFix:
-      blogLinks.length < 2
-        ? "Add 2–4 relevant links to other SprintsPlans articles with descriptive anchor text."
-        : "Replace generic anchor text with descriptive phrases that describe the linked article.",
+    howToFix: failedChecks[0]?.fix,
+    checks,
   };
 }

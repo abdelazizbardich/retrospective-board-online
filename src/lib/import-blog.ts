@@ -10,6 +10,7 @@ export interface ImportedBlogPost {
   author: string;
   category: string;
   coverImage: string;
+  coverImageAlt: string;
   tags: string;
   metaDescription: string;
   focusKeyword: string;
@@ -24,6 +25,14 @@ const HEADER_ALIASES: Record<keyof Omit<ImportedBlogPost, "published">, string[]
   author: ["author", "writer", "by"],
   category: ["category", "categories"],
   coverImage: ["coverimage", "cover_image", "cover image", "image", "cover"],
+  coverImageAlt: [
+    "coverimagealt",
+    "cover_image_alt",
+    "cover image alt",
+    "image alt",
+    "alt text",
+    "cover alt",
+  ],
   tags: ["tags", "tag", "keywords"],
   metaDescription: ["metadescription", "meta_description", "meta description", "seo", "seo description"],
   focusKeyword: [
@@ -266,6 +275,7 @@ export async function parseBlogExcelFile(file: File): Promise<ImportedBlogPost[]
         title: title.slice(0, 200),
         category,
       }),
+      coverImageAlt: (col.coverImageAlt !== undefined ? cellString(row[col.coverImageAlt]) : "").slice(0, 200),
       tags: (col.tags !== undefined ? cellString(row[col.tags]) : "").slice(0, 300),
       metaDescription: (col.metaDescription !== undefined ? cellString(row[col.metaDescription]) : "").slice(0, 300),
       focusKeyword: (col.focusKeyword !== undefined ? cellString(row[col.focusKeyword]) : "").slice(0, 100),
@@ -287,6 +297,7 @@ export async function downloadBlogImportTemplate(): Promise<void> {
       "author",
       "category",
       "coverImage",
+      "coverImageAlt",
       "tags",
       "metaDescription",
       "focusKeyword",
@@ -299,6 +310,7 @@ export async function downloadBlogImportTemplate(): Promise<void> {
       "Jane Doe",
       "Guides",
       "https://example.com/cover.jpg",
+      "Team collaborating during a sprint retrospective",
       "agile, retro, teams",
       "Learn how to facilitate effective sprint retrospectives.",
       "sprint retrospective",

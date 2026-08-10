@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { SeoAnalyzerService } from "@/lib/seo/seo-analyzer-service";
 import { getCategoryTooltip } from "@/lib/seo/category-tooltips";
-import type { InternalLinkSuggestion, SeoAnalysisOutput, SeoPostInput } from "@/lib/seo/types";
+import type { InternalLinkSuggestion, SeoAnalysisOutput, SeoCheckItem, SeoPostInput } from "@/lib/seo/types";
 import { SITE_URL } from "@/lib/config";
 import { generateBlogSchema } from "@/lib/seo/schema-generator";
 
@@ -39,7 +39,7 @@ interface BlogSeoPanelProps {
   postInput: SeoPostInput;
   seoFields: SeoFormFields;
   onSeoChange: (fields: Partial<SeoFormFields>) => void;
-  onInsertLink?: (slug: string, anchor: string) => void;
+  onInsertLink?: (slug: string, anchor: string, title: string) => void;
   allPosts?: { slug: string; title: string; content: string; category: string; tags: string }[];
 }
 
@@ -66,17 +66,104 @@ function scoreRingColor(score: number): string {
 function LengthBar({ length, idealMin, idealMax, max }: { length: number; idealMin: number; idealMax: number; max: number }) {
   const pct = Math.min(100, (length / max) * 100);
   const inRange = length >= idealMin && length <= idealMax;
+  const overMax = length > max;
+  const aboveIdeal = length > idealMax && !overMax;
+
+  let statusLabel: string;
+  if (inRange) statusLabel = "✓";
+  else if (length < idealMin) statusLabel = "(too short)";
+  else if (overMax) statusLabel = "(too long)";
+  else statusLabel = `(ideal: ${idealMin}–${idealMax})`;
+
+  const barColor = inRange
+    ? "bg-green-500"
+    : overMax
+      ? "bg-red-500"
+      : aboveIdeal
+        ? "bg-amber-500"
+        : "bg-red-400";
+
   return (
     <div className="mt-1">
       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${inRange ? "bg-green-500" : length > idealMax ? "bg-amber-500" : "bg-red-400"}`}
+          className={`h-full rounded-full transition-all ${barColor}`}
           style={{ width: `${pct}%` }}
         />
       </div>
       <p className="text-xs text-muted-foreground mt-0.5">
-        {length} / {max} chars {inRange ? "✓" : length < idealMin ? "(too short)" : "(too long)"}
+        {length} / {max} chars {statusLabel}
       </p>
+    </div>
+  );
+}
+
+function KeywordHint({ keyword }: { keyword: string }) {
+  const trimmed = keyword.trim();
+  const wordCount = trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0;
+  const charCount = trimmed.length;
+  const idealMin = 2;
+  const idealMax = 5;
+  const max = 100;
+  const pct = Math.min(100, (charCount / max) * 100);
+  const inRange = wordCount >= idealMin && wordCount <= idealMax && charCount <= max;
+  const overMax = charCount > max;
+  const aboveIdeal = wordCount > idealMax && !overMax;
+
+  let statusLabel: string;
+  if (!trimmed) statusLabel = "(not set)";
+  else if (inRange) statusLabel = "✓";
+  else if (overMax) statusLabel = "(too long)";
+  else if (wordCount < idealMin) statusLabel = "(too short — aim for 2–5 words)";
+  else statusLabel = `(ideal: ${idealMin}–${idealMax} words)`;
+
+  const barColor = !trimmed
+    ? "bg-red-400"
+    : inRange
+      ? "bg-green-500"
+      : overMax
+        ? "bg-red-500"
+        : "bg-amber-500";
+
+  return (
+    <div className="mt-1">
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${barColor}`}
+          style={{ width: trimmed ? `${pct}%` : "0%" }}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground mt-0.5">
+        {wordCount} word{wordCount !== 1 ? "s" : ""} · {charCount} / {max} chars {statusLabel}
+      </p>
+    </div>
+  );
+}
+
+function FieldAnalysisHint({ result }: { result?: { status: "passed" | "warning" | "failed"; message: string } }) {
+  if (!result) return null;
+  return (
+    <div className="mt-1.5 flex items-start gap-1.5">
+      <StatusIcon status={result.status} />
+      <p className="text-xs text-muted-foreground">{result.message}</p>
+    </div>
+  );
+}
+
+function ChecklistItem({ check }: { check: SeoCheckItem }) {
+  return (
+    <div className="flex items-start gap-2">
+      {check.passed ? (
+        <CheckCircle2 className="size-3.5 text-green-500 shrink-0 mt-0.5" />
+      ) : (
+        <XCircle className="size-3.5 text-red-500 shrink-0 mt-0.5" />
+      )}
+      <div className="min-w-0">
+        <p className={check.passed ? "text-muted-foreground" : "text-foreground"}>{check.label}</p>
+        {!check.passed && check.fix && (
+          <p className="text-muted-foreground mt-0.5">→ {check.fix}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -178,6 +265,7 @@ export function BlogSeoPanel({
   const score = analysis?.totalScore ?? 0;
   const circumference = 2 * Math.PI * 36;
   const strokeDashoffset = circumference - (score / 100) * circumference;
+  const focusKeywordResult = analysis?.categories.find((c) => c.title === "Focus Keyword");
 
   return (
     <div className="flex flex-col h-full">
@@ -233,27 +321,51 @@ export function BlogSeoPanel({
             <div className="space-y-1">
               {analysis?.categories.map((cat) => {
                 const tooltip = getCategoryTooltip(cat.title, cat.whyItMatters);
+                const hasDetails = (cat.checks?.length ?? 0) > 0 || !!cat.howToFix || !!cat.problem;
+                const failedCount = cat.checks?.filter((c) => !c.passed).length ?? 0;
+                const isExpanded = expanded.has(cat.title);
+
                 return (
                 <div key={cat.title} className="group relative rounded-lg border border-border">
                   <CategoryRowTooltip text={tooltip} />
                   <button
                     type="button"
-                    onClick={() => cat.recommendation && toggleExpand(cat.title)}
+                    onClick={() => hasDetails && toggleExpand(cat.title)}
                     title={tooltip}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors rounded-lg"
+                    className={`flex w-full items-start gap-2 px-3 py-2 text-left text-sm transition-colors rounded-lg ${
+                      hasDetails ? "hover:bg-muted/50 cursor-pointer" : "cursor-default"
+                    }`}
                   >
                     <StatusIcon status={cat.status} />
-                    <span className="flex-1 font-medium">{cat.title}</span>
-                    <span className="text-xs text-muted-foreground">{cat.score}/{cat.maxScore}</span>
-                    {cat.howToFix && (
-                      expanded.has(cat.title)
-                        ? <ChevronDown className="size-3.5 text-muted-foreground" />
-                        : <ChevronRight className="size-3.5 text-muted-foreground" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{cat.title}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{cat.score}/{cat.maxScore}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{cat.message}</p>
+                      {failedCount > 0 && !isExpanded && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                          {failedCount} item{failedCount !== 1 ? "s" : ""} to fix — click to expand
+                        </p>
+                      )}
+                    </div>
+                    {hasDetails && (
+                      isExpanded
+                        ? <ChevronDown className="size-3.5 text-muted-foreground shrink-0 mt-1" />
+                        : <ChevronRight className="size-3.5 text-muted-foreground shrink-0 mt-1" />
                     )}
                   </button>
-                  {expanded.has(cat.title) && cat.howToFix && (
-                    <div className="px-3 pb-3 text-xs space-y-2 border-t border-border bg-muted/20 rounded-b-lg">
-                      {cat.problem && (
+                  {isExpanded && hasDetails && (
+                    <div className="px-3 pb-3 text-xs space-y-3 border-t border-border bg-muted/20 rounded-b-lg pt-2">
+                      {cat.checks && cat.checks.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="font-semibold text-foreground">Checklist</p>
+                          {cat.checks.map((check) => (
+                            <ChecklistItem key={check.label} check={check} />
+                          ))}
+                        </div>
+                      )}
+                      {cat.problem && !cat.checks?.length && (
                         <div>
                           <p className="font-semibold text-foreground">Problem</p>
                           <p className="text-muted-foreground">{cat.problem}</p>
@@ -265,10 +377,12 @@ export function BlogSeoPanel({
                           <p className="text-muted-foreground">{cat.whyItMatters}</p>
                         </div>
                       )}
-                      <div>
-                        <p className="font-semibold text-foreground">How to fix</p>
-                        <p className="text-muted-foreground">{cat.howToFix}</p>
-                      </div>
+                      {cat.howToFix && (
+                        <div>
+                          <p className="font-semibold text-foreground">Quick fix</p>
+                          <p className="text-muted-foreground">{cat.howToFix}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -308,7 +422,7 @@ export function BlogSeoPanel({
                       {onInsertLink && (
                         <button
                           type="button"
-                          onClick={() => onInsertLink(s.slug, s.suggestedAnchor)}
+                          onClick={() => onInsertLink(s.slug, s.suggestedAnchor, s.title)}
                           className="mt-2 text-primary hover:underline font-medium"
                         >
                           Insert link
@@ -331,6 +445,7 @@ export function BlogSeoPanel({
                   value={seoFields.focusKeyword}
                   onChange={(e) => onSeoChange({ focusKeyword: e.target.value })}
                   placeholder="e.g. online retrospective tools"
+                  maxLength={100}
                   className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 <button
@@ -343,6 +458,8 @@ export function BlogSeoPanel({
                   <Sparkles className="size-3.5" />
                 </button>
               </div>
+              <KeywordHint keyword={seoFields.focusKeyword} />
+              <FieldAnalysisHint result={focusKeywordResult} />
             </div>
 
             <div>

@@ -79,6 +79,7 @@ export async function PATCH(
       ...(body.author !== undefined          && { author:          String(body.author).trim().slice(0, 100) }),
       ...(body.category !== undefined        && { category:        String(body.category).trim().slice(0, 100) }),
       ...(body.coverImage !== undefined      && { coverImage:      String(body.coverImage).trim().slice(0, 500) }),
+      ...(body.coverImageAlt !== undefined   && { coverImageAlt:   String(body.coverImageAlt).trim().slice(0, 200) }),
       ...(body.tags !== undefined            && { tags:            String(body.tags).trim().slice(0, 300) }),
       ...(body.metaDescription !== undefined && { metaDescription: String(body.metaDescription).trim().slice(0, 300) }),
       ...parseSeoFieldsFromBody(body),

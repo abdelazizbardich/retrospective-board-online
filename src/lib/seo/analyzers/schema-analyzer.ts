@@ -20,6 +20,39 @@ export function analyzeSchema(input: SeoPostInput): SeoAnalysisResult {
   const ratio = score / maxScore;
   const status = validation.valid ? statusFromScore(ratio) : "failed";
 
+  const checks = [
+    {
+      label: validation.valid ? "Schema passes validation" : `Validation errors: ${validation.errors.join(", ")}`,
+      passed: validation.valid,
+      fix: "Fill in missing fields (title, description, author) to generate valid schema.",
+    },
+    {
+      label: schema["@type"] ? `Schema type: ${schema["@type"]}` : "Schema @type missing",
+      passed: !!schema["@type"],
+      fix: "Select a schema type (BlogPosting, Article, or FAQPage).",
+    },
+    {
+      label:
+        schema.headline && schema.description
+          ? "Headline and description present"
+          : "Missing headline or description",
+      passed: !!(schema.headline && schema.description),
+      fix: "Ensure SEO title and meta description are filled in.",
+    },
+    {
+      label:
+        content.hasFaq && input.schemaType === "FAQPage"
+          ? "FAQPage schema matches FAQ content"
+          : content.hasFaq && input.schemaType !== "FAQPage"
+            ? "Article has FAQ section but schema is not FAQPage"
+            : "FAQ schema not applicable",
+      passed: !content.hasFaq || input.schemaType === "FAQPage",
+      fix: "Switch schema type to FAQPage since your article has an FAQ section.",
+    },
+  ];
+
+  const failedChecks = checks.filter((c) => !c.passed);
+
   return {
     score: clampScore(score, maxScore),
     maxScore,
@@ -28,13 +61,10 @@ export function analyzeSchema(input: SeoPostInput): SeoAnalysisResult {
     message: validation.valid
       ? `${input.schemaType || "BlogPosting"} schema is valid.`
       : `Schema validation issues: ${validation.errors.join(", ")}.`,
-    problem: !validation.valid ? validation.errors.join("; ") : undefined,
+    problem: failedChecks.length > 0 ? failedChecks.map((c) => c.label).join("; ") : undefined,
     whyItMatters:
       "Structured data helps search engines display rich results like article snippets and FAQs.",
-    howToFix: !validation.valid
-      ? "Fill in missing fields (title, description, author) to generate valid schema."
-      : content.hasFaq && input.schemaType !== "FAQPage"
-        ? "Consider using FAQPage schema since your article has an FAQ section."
-        : undefined,
+    howToFix: failedChecks[0]?.fix,
+    checks,
   };
 }

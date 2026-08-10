@@ -48,8 +48,11 @@ export async function POST(request: NextRequest) {
   }
 
   const slug = String(formData.get("slug") ?? "cover").trim() || "cover";
+  const folder = String(formData.get("folder") ?? "covers").trim() === "content"
+    ? "blog-content"
+    : "blog-covers";
   const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") ?? "jpg";
-  const pathname = `blog-covers/${slug}-${Date.now()}.${ext}`;
+  const pathname = `${folder}/${slug}-${Date.now()}.${ext}`;
 
   const blob = await put(pathname, file, {
     access: "public",

@@ -6,6 +6,8 @@ export const SEO_ISSUE_TOOLTIPS: Record<string, string> = {
     "No focus keyword is set. A target phrase helps align the title, meta description, and content for ranking.",
   "No cover":
     "No featured cover image. Cover images improve social shares and can appear in rich search results.",
+  "No cover alt":
+    "The cover image has no alt text (or it is too short). Alt text helps accessibility and search engines understand the image.",
   "No links":
     "This post links to no other blog articles. Internal links help readers discover related content and spread SEO value.",
   Orphan:

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Calendar, User, ArrowLeft } from "lucide-react";
 import { sanitizeContent } from "@/lib/sanitize-content";
 import { getBlogPost, getRelatedBlogPosts } from "@/lib/blog-store";
-import { getPostCoverImage } from "@/lib/blog-thumbnail";
+import { getPostCoverImage, getPostCoverImageAlt } from "@/lib/blog-thumbnail";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 import { BlogCategoryLink } from "@/app/components/blog-category-link";
 import { BlogTagLink } from "@/app/components/blog-tag-link";
@@ -21,6 +21,7 @@ export async function generateMetadata(
   const post = await getBlogPost(slug);
   if (!post?.published) return {};
   const coverImage = getPostCoverImage(post);
+  const coverImageAlt = getPostCoverImageAlt(post);
   const seoTitle = post.seoTitle || post.title;
   const description = post.metaDescription || post.excerpt || undefined;
   const canonical = post.canonicalUrl || `${SITE_URL}/blog/${slug}`;
@@ -72,6 +73,7 @@ export default async function BlogPostPage({
     : [];
 
   const coverImage = getPostCoverImage(post);
+  const coverImageAlt = getPostCoverImageAlt(post);
   const relatedPosts = await getRelatedBlogPosts(post);
 
   return (
@@ -96,7 +98,7 @@ export default async function BlogPostPage({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={coverImage}
-            alt={post.title}
+            alt={coverImageAlt}
             className="h-full w-full object-cover"
           />
         </div>

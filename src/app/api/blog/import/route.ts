@@ -16,6 +16,7 @@ type ImportRow = {
   author?: unknown;
   category?: unknown;
   coverImage?: unknown;
+  coverImageAlt?: unknown;
   tags?: unknown;
   metaDescription?: unknown;
   focusKeyword?: unknown;
@@ -100,6 +101,7 @@ export async function POST(request: NextRequest) {
         author: String(row.author ?? "").trim().slice(0, 100),
         category,
         coverImage,
+        coverImageAlt: String(row.coverImageAlt ?? "").trim().slice(0, 200),
         tags: String(row.tags ?? "").trim().slice(0, 300),
         metaDescription: String(row.metaDescription ?? "").trim().slice(0, 300),
         focusKeyword: String(row.focusKeyword ?? "").trim().slice(0, 100),

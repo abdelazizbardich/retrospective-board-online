@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   const body = await request.json();
-  const { title, slug, excerpt, content, author, category, coverImage, tags, metaDescription } = body;
+  const { title, slug, excerpt, content, author, category, coverImage, coverImageAlt, tags, metaDescription } = body;
   const publishState = resolveBlogPublishState({
     published: body.published === true,
     scheduledAt: body.scheduledAt != null ? Number(body.scheduledAt) : null,
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       author: String(author ?? "").trim().slice(0, 100),
       category: String(category ?? "").trim().slice(0, 100),
       coverImage: String(coverImage ?? "").trim().slice(0, 500),
+      coverImageAlt: String(coverImageAlt ?? "").trim().slice(0, 200),
       tags: String(tags ?? "").trim().slice(0, 300),
       metaDescription: String(metaDescription ?? "").trim().slice(0, 300),
       published: publishState.published,

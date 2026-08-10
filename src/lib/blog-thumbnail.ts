@@ -66,3 +66,11 @@ export function getPostCoverImage(post: {
     category: post.category,
   });
 }
+
+export function getPostCoverImageAlt(post: {
+  title: string;
+  coverImageAlt?: string;
+}): string {
+  const alt = (post.coverImageAlt ?? "").trim();
+  return alt || post.title;
+}

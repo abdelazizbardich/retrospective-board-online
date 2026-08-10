@@ -13,6 +13,7 @@ export interface BlogPost {
   author: string;
   category: string;
   coverImage: string;
+  coverImageAlt: string;
   tags: string; // comma-separated
   metaDescription: string;
   focusKeyword: string;
@@ -43,6 +44,7 @@ export function blogPostToSeoInput(post: BlogPost): SeoPostInput {
     excerpt: post.excerpt,
     content: post.content,
     coverImage: post.coverImage,
+    coverImageAlt: post.coverImageAlt,
     tags: post.tags,
     category: post.category,
     author: post.author,
@@ -102,6 +104,7 @@ type BlogPostRow = {
   author: string;
   category: string;
   cover_image: string;
+  cover_image_alt?: string;
   tags: string;
   meta_description: string;
   focus_keyword?: string;
@@ -145,6 +148,7 @@ function rowToPost(row: BlogPostRow): BlogPost {
     author: row.author,
     category: row.category ?? "",
     coverImage: row.cover_image,
+    coverImageAlt: row.cover_image_alt ?? "",
     tags: row.tags,
     metaDescription: row.meta_description,
     focusKeyword: row.focus_keyword ?? defaults.focusKeyword,
@@ -518,6 +522,7 @@ export async function createBlogPost(
     author: data.author,
     category: data.category,
     cover_image: data.coverImage,
+    cover_image_alt: data.coverImageAlt,
     tags: data.tags,
     meta_description: data.metaDescription,
     published: data.published,
@@ -566,6 +571,7 @@ export async function updateBlogPost(
   if (patch.author !== undefined)          updates.author           = patch.author;
   if (patch.category !== undefined)        updates.category         = patch.category;
   if (patch.coverImage !== undefined)      updates.cover_image      = patch.coverImage;
+  if (patch.coverImageAlt !== undefined)   updates.cover_image_alt  = patch.coverImageAlt;
   if (patch.tags !== undefined)            updates.tags             = patch.tags;
   if (patch.metaDescription !== undefined) updates.meta_description = patch.metaDescription;
   if (patch.published !== undefined)       updates.published        = patch.published;

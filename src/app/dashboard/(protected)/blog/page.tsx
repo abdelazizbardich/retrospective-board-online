@@ -8,6 +8,7 @@ import { TagInput } from "@/app/components/tag-input";
 import { BlogSeoPanel, type SeoFormFields } from "@/app/components/blog-seo-panel";
 import { EMPTY_SEO_FORM } from "@/lib/seo/api-helpers";
 import { insertInternalLink } from "@/lib/seo/internal-linking";
+import { analyzeImages } from "@/lib/seo/analyzers/image-analyzer";
 import type { SeoPostInput } from "@/lib/seo/types";
 import {
   downloadBlogImportTemplate,
@@ -16,7 +17,7 @@ import {
 } from "@/lib/import-blog";
 import { isPhantomLocalCoverPath } from "@/lib/blog-thumbnail";
 import {
-  Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink, X, Save, RefreshCw, Upload, Download, FileSpreadsheet, ImageIcon, Sparkles, Clock, BarChart3, Search,
+  Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink, X, Save, RefreshCw, Upload, Download, FileSpreadsheet, ImageIcon, Sparkles, Clock, BarChart3, Search, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 
 interface BlogPost {
@@ -28,6 +29,7 @@ interface BlogPost {
   author: string;
   category: string;
   coverImage: string;
+  coverImageAlt: string;
   tags: string;
   metaDescription: string;
   focusKeyword: string;
@@ -85,6 +87,7 @@ const EMPTY = {
   author: "",
   category: "",
   coverImage: "",
+  coverImageAlt: "",
   tags: "",
   metaDescription: "",
   ...EMPTY_SEO_FORM,
@@ -184,6 +187,7 @@ export default function BlogAdminPage() {
       author: post.author,
       category: post.category ?? "",
       coverImage: isPhantomLocalCoverPath(post.coverImage) ? "" : post.coverImage,
+      coverImageAlt: post.coverImageAlt ?? "",
       tags: post.tags,
       metaDescription: post.metaDescription,
       focusKeyword: post.focusKeyword ?? "",
@@ -248,7 +252,11 @@ export default function BlogAdminPage() {
         setCoverUploadError(data.error ?? "Upload failed");
         return;
       }
-      setForm((f) => ({ ...f, coverImage: data.url }));
+      setForm((f) => ({
+        ...f,
+        coverImage: data.url,
+        coverImageAlt: f.coverImageAlt.trim() || f.title.trim(),
+      }));
     } catch {
       setCoverUploadError("Upload failed");
     } finally {
@@ -280,7 +288,11 @@ export default function BlogAdminPage() {
         return;
       }
       const url = String(data.url ?? "");
-      setForm((f) => ({ ...f, coverImage: url }));
+      setForm((f) => ({
+        ...f,
+        coverImage: url,
+        coverImageAlt: f.coverImageAlt.trim() || f.title.trim(),
+      }));
 
       if (!isNew && editing && url) {
         const saveRes = await fetch(`/api/blog/${editing.slug}`, {
@@ -587,11 +599,19 @@ export default function BlogAdminPage() {
     excerpt: form.excerpt,
     content: form.content,
     coverImage: form.coverImage,
+    coverImageAlt: form.coverImageAlt,
     tags: form.tags,
     category: form.category,
     author: form.author,
     ...seoFields,
   }), [form, seoFields]);
+
+  const coverAltSeoCheck = useMemo(() => {
+    if (!form.coverImage.trim()) return null;
+    return analyzeImages(seoPostInput).checks?.find((check) =>
+      check.label.toLowerCase().includes("cover image")
+    );
+  }, [form.coverImage, seoPostInput]);
 
   const allPostsForSeo = useMemo(
     () => posts.map((p) => ({ slug: p.slug, title: p.title, content: p.content, category: p.category, tags: p.tags })),
@@ -602,10 +622,10 @@ export default function BlogAdminPage() {
     setForm((f) => ({ ...f, ...fields }));
   };
 
-  const handleInsertLink = (slug: string, anchor: string) => {
+  const handleInsertLink = (slug: string, anchor: string, title: string) => {
     setForm((f) => ({
       ...f,
-      content: insertInternalLink(f.content, slug, anchor),
+      content: insertInternalLink(f.content, slug, anchor, title),
     }));
   };
 
@@ -1078,12 +1098,12 @@ export default function BlogAdminPage() {
                   <div className="relative mb-3 rounded-xl overflow-hidden border border-border">
                     <img
                       src={form.coverImage}
-                      alt="Cover preview"
+                      alt={form.coverImageAlt.trim() || form.title.trim() || "Cover preview"}
                       className="w-full h-40 object-cover"
                     />
                     <button
                       type="button"
-                      onClick={() => setForm((f) => ({ ...f, coverImage: "" }))}
+                      onClick={() => setForm((f) => ({ ...f, coverImage: "", coverImageAlt: "" }))}
                       className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-muted transition-colors"
                       title="Remove cover image"
                     >
@@ -1159,6 +1179,33 @@ export default function BlogAdminPage() {
                   placeholder="https://images.unsplash.com/…"
                   className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
+
+                <label className="block text-sm font-medium mt-3 mb-1.5">Image alt text</label>
+                <input
+                  type="text"
+                  value={form.coverImageAlt}
+                  onChange={(e) => setForm((f) => ({ ...f, coverImageAlt: e.target.value }))}
+                  placeholder="Describe the cover image for accessibility and SEO"
+                  maxLength={200}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Shown to screen readers and search engines. Defaults to the post title if left empty.
+                </p>
+                {coverAltSeoCheck && (
+                  <div className="mt-2 flex items-start gap-1.5">
+                    {coverAltSeoCheck.passed ? (
+                      <CheckCircle2 className="size-3.5 text-green-500 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle className="size-3.5 text-amber-500 shrink-0 mt-0.5" />
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {coverAltSeoCheck.passed
+                        ? coverAltSeoCheck.label
+                        : coverAltSeoCheck.fix ?? coverAltSeoCheck.label}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Excerpt */}
@@ -1181,6 +1228,7 @@ export default function BlogAdminPage() {
                     value={form.content}
                     onChange={(html) => setForm((f) => ({ ...f, content: html }))}
                     placeholder="Write your post here…"
+                    uploadSlug={form.slug || slugify(form.title) || "content"}
                   />
                 </div>
               </div>

@@ -51,8 +51,50 @@ export function analyzeMetaDescription(
     score += 2;
   }
 
+  const lenIdeal = len >= 140 && len <= 160;
+  const keywordPresent = focus ? keywordInText(focus, desc) : true;
+  const hasCta = /\b(learn|discover|find out|get started|read|explore)\b/i.test(desc);
+  const hasSentence = desc.split(/[.!?]/).filter(Boolean).length >= 1;
+  const isUnique = duplicates.length <= 1;
+
+  const checks = [
+    {
+      label: `Length 140–160 characters (currently ${len})`,
+      passed: lenIdeal,
+      fix:
+        len < 140
+          ? `Add ${140 - len} more characters to reach the ideal 140–160 range.`
+          : "Trim to 140–160 characters so Google doesn't cut off your snippet.",
+    },
+    ...(focus
+      ? [
+          {
+            label: `Focus keyword "${focus}" in description`,
+            passed: keywordPresent,
+            fix: `Work "${focus}" naturally into the meta description.`,
+          },
+        ]
+      : []),
+    {
+      label: "Includes a call to action (learn, discover, read…)",
+      passed: hasCta,
+      fix: 'End with an action phrase like "Learn how…" or "Discover…" to encourage clicks.',
+    },
+    {
+      label: "Complete sentence(s)",
+      passed: hasSentence,
+      fix: "Write at least one full sentence that summarizes the article.",
+    },
+    {
+      label: "Unique across your blog posts",
+      passed: isUnique,
+      fix: "Another post uses this exact meta description — write a unique one for this article.",
+    },
+  ];
+
   const ratio = score / maxScore;
   const status = statusFromScore(ratio);
+  const failedChecks = checks.filter((c) => !c.passed);
 
   return {
     score: clampScore(score, maxScore),
@@ -64,18 +106,12 @@ export function analyzeMetaDescription(
         ? `Meta description looks good (${len} characters).`
         : `Meta description needs work: ${issues.join(", ")}.`,
     problem:
-      issues.length > 0
-        ? `Meta description issues: ${issues.join(", ")}.`
+      failedChecks.length > 0
+        ? failedChecks.map((c) => c.label).join("; ")
         : undefined,
     whyItMatters:
       "A clear meta description improves relevance signals and encourages clicks from search results.",
-    howToFix:
-      focus && !keywordInText(focus, desc)
-        ? `Add "${focus}" naturally to the meta description.`
-        : len < 120
-          ? "Expand your meta description to around 140–160 characters."
-          : len > 170
-            ? "Trim your meta description to around 140–160 characters."
-            : undefined,
+    howToFix: failedChecks[0]?.fix,
+    checks,
   };
 }

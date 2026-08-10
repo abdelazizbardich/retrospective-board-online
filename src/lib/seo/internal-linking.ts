@@ -88,6 +88,16 @@ function suggestAnchor(post: LinkCandidatePost, focusKeyword: string): string {
   return words.slice(0, 4).join(" ").toLowerCase();
 }
 
+function isSlugLinkedInContent(content: string, slug: string): boolean {
+  const linkRegex = /<a[^>]*href=["']([^"']+)["']/gi;
+  let match: RegExpExecArray | null;
+  while ((match = linkRegex.exec(content)) !== null) {
+    const slugMatch = match[1].match(/\/blog\/([a-z0-9-]+)/);
+    if (slugMatch?.[1] === slug) return true;
+  }
+  return content.includes(`/blog/${slug}`);
+}
+
 export function findInternalLinkSuggestions(
   currentPost: {
     slug: string;
@@ -111,7 +121,7 @@ export function findInternalLinkSuggestions(
   const focus = normalizeKeyword(currentPost.focusKeyword);
 
   const candidates = allPosts
-    .filter((p) => p.slug !== currentPost.slug)
+    .filter((p) => p.slug !== currentPost.slug && !isSlugLinkedInContent(currentPost.content, p.slug))
     .map((post) => {
       const c = toCandidate(post);
       let relevance = jaccardSimilarity(currentTokens, c.tokens) * 60;
@@ -165,7 +175,8 @@ export function countIncomingLinks(allPosts: BlogPost[]): Map<string, number> {
 export function insertInternalLink(
   content: string,
   slug: string,
-  anchor: string
+  anchor: string,
+  linkText?: string
 ): string {
   const href = `/blog/${slug}`;
   if (content.includes(href)) return content;
@@ -173,7 +184,8 @@ export function insertInternalLink(
   const wrapped = wrapAnchorInHtml(content, anchor, href);
   if (wrapped) return wrapped;
 
-  const link = `<a href="${href}">${anchor}</a>`;
+  const displayText = linkText?.trim() || anchor;
+  const link = `<a href="${href}">${displayText}</a>`;
   const pMatch = content.match(/<p[^>]*>[\s\S]*?<\/p>/i);
   if (pMatch) {
     const idx = content.indexOf(pMatch[0]) + pMatch[0].length;
