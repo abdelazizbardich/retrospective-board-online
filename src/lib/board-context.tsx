@@ -79,6 +79,7 @@ export function BoardProvider({
   const [joinRejected, setJoinRejected] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const sessionTokenRef = useRef<string | null>(null);
   const prevMessageCountRef = useRef(0);
   const chatOpenRef = useRef(false);
   const prevParticipantIdsRef = useRef<Set<string> | null>(null);
@@ -174,6 +175,10 @@ export function BoardProvider({
         setRoomClosed(true);
         setParticipant(null);
         sessionStorage.removeItem(`retro-participant-${boardId}`);
+        sessionStorage.removeItem(`retro-session-${boardId}`);
+        sessionStorage.removeItem(`retro-pending-${boardId}`);
+        sessionStorage.removeItem(`retro-pending-token-${boardId}`);
+        sessionTokenRef.current = null;
         if (intervalRef.current) clearInterval(intervalRef.current);
       } else {
         // Detect if pending join request was approved or rejected
@@ -181,15 +186,50 @@ export function BoardProvider({
         if (pendingId) {
           const approvedP = data.participants.find((p) => p.id === pendingId && !p.left);
           if (approvedP) {
-            // Approved — set as participant
-            setParticipant(approvedP);
-            sessionStorage.setItem(`retro-participant-${boardId}`, JSON.stringify(approvedP));
+            // Approved — claim a signed session token
+            const pendingToken = sessionStorage.getItem(`retro-pending-token-${boardId}`);
+            if (pendingToken) {
+              try {
+                const claimRes = await fetch(`/api/boards/${boardId}`, {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${pendingToken}`,
+                  },
+                  credentials: "same-origin",
+                  body: JSON.stringify({ action: "claim-session" }),
+                });
+                if (claimRes.ok) {
+                  const claimed = await claimRes.json();
+                  if (claimed.sessionToken) {
+                    sessionTokenRef.current = claimed.sessionToken;
+                    sessionStorage.setItem(`retro-session-${boardId}`, claimed.sessionToken);
+                  }
+                  setParticipant(claimed.participant ?? approvedP);
+                  sessionStorage.setItem(
+                    `retro-participant-${boardId}`,
+                    JSON.stringify(claimed.participant ?? approvedP)
+                  );
+                } else {
+                  setParticipant(approvedP);
+                  sessionStorage.setItem(`retro-participant-${boardId}`, JSON.stringify(approvedP));
+                }
+              } catch {
+                setParticipant(approvedP);
+                sessionStorage.setItem(`retro-participant-${boardId}`, JSON.stringify(approvedP));
+              }
+            } else {
+              setParticipant(approvedP);
+              sessionStorage.setItem(`retro-participant-${boardId}`, JSON.stringify(approvedP));
+            }
             sessionStorage.removeItem(`retro-pending-${boardId}`);
+            sessionStorage.removeItem(`retro-pending-token-${boardId}`);
             setPendingRequestId(null);
             setJoinRejected(false);
           } else if (!(data.pendingJoinRequests || []).some((r) => r.id === pendingId)) {
             // Not in participants and not in pending → rejected
             sessionStorage.removeItem(`retro-pending-${boardId}`);
+            sessionStorage.removeItem(`retro-pending-token-${boardId}`);
             setPendingRequestId(null);
             setJoinRejected(true);
           }
@@ -204,6 +244,8 @@ export function BoardProvider({
               setKicked(true);
               setParticipant(null);
               sessionStorage.removeItem(`retro-participant-${boardId}`);
+              sessionStorage.removeItem(`retro-session-${boardId}`);
+              sessionTokenRef.current = null;
               if (intervalRef.current) clearInterval(intervalRef.current);
             }
           } catch {
@@ -227,7 +269,7 @@ export function BoardProvider({
     };
   }, [fetchBoard]);
 
-  // Load participant from session storage
+  // Load participant + session token from session storage
   useEffect(() => {
     const stored = sessionStorage.getItem(`retro-participant-${boardId}`);
     if (stored) {
@@ -236,6 +278,10 @@ export function BoardProvider({
       } catch {
         // ignore
       }
+    }
+    const token = sessionStorage.getItem(`retro-session-${boardId}`);
+    if (token) {
+      sessionTokenRef.current = token;
     }
     // Restore pending request ID if waiting for approval
     const pendingId = sessionStorage.getItem(`retro-pending-${boardId}`);
@@ -246,9 +292,15 @@ export function BoardProvider({
 
   const patchBoard = useCallback(
     async (body: Record<string, unknown>) => {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const token = sessionTokenRef.current;
+      if (token && body.action !== "join") {
+        headers.Authorization = `Bearer ${token}`;
+      }
       const res = await fetch(`/api/boards/${boardId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
+        credentials: "same-origin",
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -269,12 +321,20 @@ export function BoardProvider({
 
   const joinBoard = useCallback(
     async (name: string, userId?: string) => {
-      const result = await patchBoard({ action: "join", participantName: name, ...(userId ? { userId } : {}) });
+      const result = await patchBoard({
+        action: "join",
+        participantName: name,
+        // userId is ignored by the server; ownership comes from the user session cookie
+        ...(userId ? { userId } : {}),
+      });
       if (result.pending) {
-        // Pending approval — store request ID and wait for host
+        // Pending approval — store request ID and pending token
         setPendingRequestId(result.requestId);
         setJoinRejected(false);
         sessionStorage.setItem(`retro-pending-${boardId}`, result.requestId);
+        if (result.pendingToken) {
+          sessionStorage.setItem(`retro-pending-token-${boardId}`, result.pendingToken);
+        }
       } else {
         // Auto-joined (first user becomes host)
         const p = result.participant;
@@ -282,6 +342,11 @@ export function BoardProvider({
         setBoard(result.board);
         sessionStorage.setItem(`retro-participant-${boardId}`, JSON.stringify(p));
         sessionStorage.removeItem(`retro-pending-${boardId}`);
+        sessionStorage.removeItem(`retro-pending-token-${boardId}`);
+        if (result.sessionToken) {
+          sessionTokenRef.current = result.sessionToken;
+          sessionStorage.setItem(`retro-session-${boardId}`, result.sessionToken);
+        }
       }
     },
     [patchBoard, boardId]
@@ -293,11 +358,10 @@ export function BoardProvider({
         action: "add-card",
         columnId,
         text,
-        authorId: participant?.id || "anonymous",
         anonymous: anonymous ?? false,
       });
     },
-    [patchBoard, participant]
+    [patchBoard]
   );
 
   const editCard = useCallback(
@@ -320,10 +384,9 @@ export function BoardProvider({
         action: "vote",
         columnId,
         cardId,
-        participantId: participant?.id,
       });
     },
-    [patchBoard, participant]
+    [patchBoard]
   );
 
   const unvote = useCallback(
@@ -332,10 +395,9 @@ export function BoardProvider({
         action: "unvote",
         columnId,
         cardId,
-        participantId: participant?.id,
       });
     },
-    [patchBoard, participant]
+    [patchBoard]
   );
 
   const setPhase = useCallback(
@@ -404,71 +466,72 @@ export function BoardProvider({
 
   const kickParticipant = useCallback(
     async (participantId: string) => {
-      await patchBoard({ action: "kick-participant", participantId, requesterId: participant?.id });
+      await patchBoard({ action: "kick-participant", participantId });
     },
-    [patchBoard, participant]
+    [patchBoard]
   );
 
   const toggleAnonymous = useCallback(
     async () => {
-      await patchBoard({ action: "toggle-anonymous", participantId: participant?.id });
+      await patchBoard({ action: "toggle-anonymous" });
     },
-    [patchBoard, participant]
+    [patchBoard]
   );
 
   const reactToCard = useCallback(
     async (columnId: string, cardId: string, emoji: string) => {
-      await patchBoard({ action: "react", columnId, cardId, emoji, participantId: participant?.id });
+      await patchBoard({ action: "react", columnId, cardId, emoji });
     },
-    [patchBoard, participant]
+    [patchBoard]
   );
 
   const leaveBoard = useCallback(async () => {
     if (!participant) return;
     if (intervalRef.current) clearInterval(intervalRef.current);
+    const token = sessionTokenRef.current;
     sessionStorage.removeItem(`retro-participant-${boardId}`);
+    sessionStorage.removeItem(`retro-session-${boardId}`);
+    sessionTokenRef.current = null;
     await fetch(`/api/boards/${boardId}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "leave", participantId: participant.id }),
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({ action: "leave" }),
     });
   }, [boardId, participant]);
 
   const approveJoin = useCallback(
     async (requestId: string) => {
-      await patchBoard({ action: "approve-join", requestId, requesterId: participant?.id });
+      await patchBoard({ action: "approve-join", requestId });
     },
-    [patchBoard, participant]
+    [patchBoard]
   );
 
   const rejectJoin = useCallback(
     async (requestId: string) => {
-      await patchBoard({ action: "reject-join", requestId, requesterId: participant?.id });
+      await patchBoard({ action: "reject-join", requestId });
     },
-    [patchBoard, participant]
+    [patchBoard]
   );
 
   const assignHost = useCallback(async (newHostId: string) => {
     if (!participant) return;
-    await fetch(`/api/boards/${boardId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "assign-host", newHostId, requesterId: participant.id }),
-    });
-  }, [boardId, participant]);
+    await patchBoard({ action: "assign-host", newHostId });
+  }, [patchBoard, participant]);
 
   const sendMessage = useCallback(
     async (text: string, toId?: string, toName?: string, replyToId?: string, replyToText?: string, replyToAuthor?: string) => {
       await patchBoard({
         action: "send-message",
-        participantId: participant?.id,
-        participantName: participant?.name,
         text,
         ...(toId && toName ? { toId, toName } : {}),
         ...(replyToId && replyToText && replyToAuthor ? { replyToId, replyToText, replyToAuthor } : {}),
       });
     },
-    [patchBoard, participant]
+    [patchBoard]
   );
 
   const handleSetChatOpen = useCallback((open: boolean) => {
@@ -480,15 +543,15 @@ export function BoardProvider({
   // Fire leave when user closes tab / navigates away
   useEffect(() => {
     if (!participant) return;
-    const pid = participant.id;
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
     };
     const handleUnload = () => {
+      const token = sessionTokenRef.current;
       navigator.sendBeacon(
         `/api/boards/${boardId}`,
         new Blob(
-          [JSON.stringify({ action: "leave", participantId: pid })],
+          [JSON.stringify({ action: "leave", ...(token ? { sessionToken: token } : {}) })],
           { type: "application/json" }
         )
       );

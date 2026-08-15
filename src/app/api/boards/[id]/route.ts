@@ -4,8 +4,39 @@ import { applyTemplateLayoutOnly, applyTemplateToBoard } from "@/lib/apply-board
 import { BOARD_TEMPLATES } from "@/lib/types";
 import { nanoid } from "nanoid";
 import type { BoardPhase } from "@/lib/types";
+import {
+  createBoardSessionToken,
+  createPendingJoinToken,
+  extractBoardToken,
+  verifyBoardSessionToken,
+  verifyPendingJoinToken,
+} from "@/lib/board-session";
+import { getUserIdFromRequest } from "@/lib/user-session";
 
 const VALID_PHASES: BoardPhase[] = ["writing", "grouping", "voting", "discussing", "done"];
+
+/** Actions that do not require an existing participant session */
+const OPEN_ACTIONS = new Set(["join", "claim-session", "reopen-session"]);
+
+/** Actions that require the authenticated participant to be the host */
+const HOST_ACTIONS = new Set([
+  "approve-join",
+  "reject-join",
+  "kick-participant",
+  "assign-host",
+  "set-phase",
+  "change-template",
+  "set-timer",
+  "add-column",
+  "edit-column",
+  "delete-column",
+  "move-column",
+  "reorder-column",
+]);
+
+function withSession(participant: { id: string }, boardId: string) {
+  return { sessionToken: createBoardSessionToken(boardId, participant.id) };
+}
 
 export async function GET(
   _request: NextRequest,
@@ -27,14 +58,86 @@ export async function PATCH(
   const body = await request.json();
   const { action } = body;
 
+  if (!action || typeof action !== "string") {
+    return NextResponse.json({ error: "action required" }, { status: 400 });
+  }
+
   const board = await getBoard(id);
   if (!board) {
     return NextResponse.json({ error: "Board not found" }, { status: 404 });
   }
 
+  let sessionParticipantId: string | null = null;
+
+  if (action === "claim-session") {
+    const token = extractBoardToken(request, body);
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const pending = verifyPendingJoinToken(token, id);
+    if (!pending) {
+      return NextResponse.json({ error: "Invalid or expired pending token" }, { status: 401 });
+    }
+    const participant = board.participants.find((p) => p.id === pending.requestId && !p.left);
+    if (!participant) {
+      return NextResponse.json({ error: "Join not approved yet" }, { status: 404 });
+    }
+    return NextResponse.json({
+      participant,
+      board,
+      ...withSession(participant, id),
+    });
+  }
+
+  if (action === "reopen-session") {
+    if (board.ownerId) {
+      const userId = getUserIdFromRequest(request);
+      if (!userId || userId !== board.ownerId) {
+        return NextResponse.json({ error: "Only the board owner can reopen this session" }, { status: 403 });
+      }
+    }
+    if (!board.closed) {
+      return NextResponse.json(board);
+    }
+    const updated = await updateBoard(id, (b) => ({
+      ...b,
+      closed: false,
+      participants: [],
+      hostId: null,
+    }));
+    return NextResponse.json(updated);
+  }
+
+  if (!OPEN_ACTIONS.has(action)) {
+    const token = extractBoardToken(request, body);
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const verified = verifyBoardSessionToken(token, id);
+    if (!verified) {
+      return NextResponse.json({ error: "Invalid or expired session" }, { status: 401 });
+    }
+    const active = board.participants.find((p) => p.id === verified.participantId && !p.left);
+    if (!active && action !== "leave") {
+      return NextResponse.json({ error: "Not a participant on this board" }, { status: 403 });
+    }
+    // leave is allowed even if already marked left / kicked
+    if (!active && action === "leave") {
+      sessionParticipantId = verified.participantId;
+    } else if (active) {
+      sessionParticipantId = active.id;
+    } else {
+      return NextResponse.json({ error: "Not a participant on this board" }, { status: 403 });
+    }
+
+    if (HOST_ACTIONS.has(action) && board.hostId !== sessionParticipantId) {
+      return NextResponse.json({ error: "Only the host can perform this action" }, { status: 403 });
+    }
+  }
+
   switch (action) {
     case "add-card": {
-      const { columnId, text, authorId, anonymous } = body;
+      const { columnId, text, anonymous } = body;
       if (!columnId || !text || typeof text !== "string" || text.trim().length === 0) {
         return NextResponse.json({ error: "columnId and text required" }, { status: 400 });
       }
@@ -52,7 +155,7 @@ export async function PATCH(
                   {
                     id: nanoid(8),
                     text: text.trim(),
-                    authorId: authorId || "anonymous",
+                    authorId: sessionParticipantId!,
                     anonymous: anonymous === true,
                     votes: [],
                     reactions: {},
@@ -104,10 +207,8 @@ export async function PATCH(
     }
 
     case "vote": {
-      const { columnId, cardId, participantId } = body;
-      if (!participantId) {
-        return NextResponse.json({ error: "participantId required" }, { status: 400 });
-      }
+      const { columnId, cardId } = body;
+      const participantId = sessionParticipantId!;
 
       // Check if this participant already voted on this card
       const targetCard = board.columns
@@ -162,10 +263,8 @@ export async function PATCH(
     }
 
     case "unvote": {
-      const { columnId, cardId, participantId } = body;
-      if (!participantId) {
-        return NextResponse.json({ error: "participantId required" }, { status: 400 });
-      }
+      const { columnId, cardId } = body;
+      const participantId = sessionParticipantId!;
       const updated = await updateBoard(id, (b) => ({
         ...b,
         columns: b.columns.map((col) =>
@@ -215,7 +314,7 @@ export async function PATCH(
     }
 
     case "join": {
-      const { participantName, userId } = body;
+      const { participantName } = body;
       if (!participantName || typeof participantName !== "string" || participantName.trim().length === 0) {
         return NextResponse.json({ error: "participantName required" }, { status: 400 });
       }
@@ -224,6 +323,8 @@ export async function PATCH(
       }
 
       const trimmedName = participantName.trim();
+      // Ownership only from verified user session cookie — never trust body.userId
+      const userId = getUserIdFromRequest(request) ?? undefined;
       const isOwner = !!(userId && board.ownerId && userId === board.ownerId);
 
       // Already joined with this account — return existing session, reclaim host if owner
@@ -232,9 +333,9 @@ export async function PATCH(
         if (active) {
           if (isOwner && board.hostId !== active.id) {
             const updated = await updateBoard(id, (b) => ({ ...b, hostId: active.id }));
-            return NextResponse.json({ board: updated, participant: active });
+            return NextResponse.json({ board: updated, participant: active, ...withSession(active, id) });
           }
-          return NextResponse.json({ board, participant: active });
+          return NextResponse.json({ board, participant: active, ...withSession(active, id) });
         }
       }
 
@@ -250,7 +351,7 @@ export async function PATCH(
             ),
             hostId: isOwner ? returningByUser.id : b.hostId,
           }));
-          return NextResponse.json({ board: updated, participant: reactivated });
+          return NextResponse.json({ board: updated, participant: reactivated, ...withSession(reactivated, id) });
         }
       }
 
@@ -270,7 +371,7 @@ export async function PATCH(
           ),
           hostId: isOwner ? returningByName.id : b.hostId,
         }));
-        return NextResponse.json({ board: updated, participant: reactivated });
+        return NextResponse.json({ board: updated, participant: reactivated, ...withSession(reactivated, id) });
       }
 
       // Board owner always joins as host (even if someone else joined first)
@@ -289,7 +390,7 @@ export async function PATCH(
             participants: b.participants.map((p) => (p.id === orphanGuest.id ? upgraded : p)),
             hostId: orphanGuest.id,
           }));
-          return NextResponse.json({ board: updated, participant: upgraded });
+          return NextResponse.json({ board: updated, participant: upgraded, ...withSession(upgraded, id) });
         }
 
         const participant = {
@@ -304,7 +405,7 @@ export async function PATCH(
           participants: [...b.participants, participant],
           hostId: participant.id,
         }));
-        return NextResponse.json({ board: updated, participant });
+        return NextResponse.json({ board: updated, participant, ...withSession(participant, id) });
       }
 
       // First user auto-joins as host
@@ -321,7 +422,7 @@ export async function PATCH(
           participants: [...b.participants, participant],
           hostId: participant.id,
         }));
-        return NextResponse.json({ board: updated, participant });
+        return NextResponse.json({ board: updated, participant, ...withSession(participant, id) });
       }
 
       // Subsequent users go into pending approval
@@ -334,16 +435,18 @@ export async function PATCH(
           requestedAt: Date.now(),
         }],
       }));
-      return NextResponse.json({ board: updated, pending: true, requestId });
+      return NextResponse.json({
+        board: updated,
+        pending: true,
+        requestId,
+        pendingToken: createPendingJoinToken(id, requestId),
+      });
     }
 
     case "approve-join": {
-      const { requestId, requesterId } = body;
+      const { requestId } = body;
       if (!requestId) {
         return NextResponse.json({ error: "requestId required" }, { status: 400 });
-      }
-      if (board.hostId !== requesterId) {
-        return NextResponse.json({ error: "Only the host can approve join requests" }, { status: 403 });
       }
       const request = (board.pendingJoinRequests || []).find((r) => r.id === requestId);
       if (!request) {
@@ -364,12 +467,9 @@ export async function PATCH(
     }
 
     case "reject-join": {
-      const { requestId, requesterId } = body;
+      const { requestId } = body;
       if (!requestId) {
         return NextResponse.json({ error: "requestId required" }, { status: 400 });
-      }
-      if (board.hostId !== requesterId) {
-        return NextResponse.json({ error: "Only the host can reject join requests" }, { status: 403 });
       }
       const updated = await updateBoard(id, (b) => ({
         ...b,
@@ -494,12 +594,9 @@ export async function PATCH(
     }
 
     case "kick-participant": {
-      const { participantId, requesterId } = body;
+      const { participantId } = body;
       if (!participantId) {
         return NextResponse.json({ error: "participantId required" }, { status: 400 });
-      }
-      if (board.hostId !== requesterId) {
-        return NextResponse.json({ error: "Only the host can kick participants" }, { status: 403 });
       }
       const target = board.participants.find((p) => p.id === participantId);
       if (!target) {
@@ -513,9 +610,10 @@ export async function PATCH(
     }
 
     case "react": {
-      const { columnId, cardId, participantId, emoji } = body;
-      if (!participantId || !emoji) {
-        return NextResponse.json({ error: "participantId and emoji required" }, { status: 400 });
+      const { columnId, cardId, emoji } = body;
+      const participantId = sessionParticipantId!;
+      if (!emoji) {
+        return NextResponse.json({ error: "emoji required" }, { status: 400 });
       }
       const ALLOWED_REACTIONS = ["😢", "😄", "😮", "😡", "😜"];
       if (!ALLOWED_REACTIONS.includes(emoji)) {
@@ -549,10 +647,7 @@ export async function PATCH(
     }
 
     case "toggle-anonymous": {
-      const { participantId } = body;
-      if (!participantId) {
-        return NextResponse.json({ error: "participantId required" }, { status: 400 });
-      }
+      const participantId = sessionParticipantId!;
       const target = board.participants.find((p) => p.id === participantId);
       if (!target) {
         return NextResponse.json({ error: "Participant not found" }, { status: 404 });
@@ -567,12 +662,9 @@ export async function PATCH(
     }
 
     case "assign-host": {
-      const { newHostId, requesterId } = body;
-      if (!newHostId || !requesterId) {
-        return NextResponse.json({ error: "newHostId and requesterId required" }, { status: 400 });
-      }
-      if (board.hostId !== requesterId) {
-        return NextResponse.json({ error: "Only the host can transfer the host role" }, { status: 403 });
+      const { newHostId } = body;
+      if (!newHostId) {
+        return NextResponse.json({ error: "newHostId required" }, { status: 400 });
       }
       if (!board.participants.some((p) => p.id === newHostId)) {
         return NextResponse.json({ error: "Target participant not found" }, { status: 404 });
@@ -625,10 +717,7 @@ export async function PATCH(
     }
 
     case "leave": {
-      const { participantId } = body;
-      if (!participantId) {
-        return NextResponse.json({ error: "participantId required" }, { status: 400 });
-      }
+      const participantId = sessionParticipantId!;
       if (!board.participants.some((p) => p.id === participantId)) {
         return NextResponse.json(board); // already gone — no-op
       }
@@ -651,23 +740,13 @@ export async function PATCH(
       return NextResponse.json(updated);
     }
 
-    case "reopen-session": {
-      if (!board.closed) {
-        return NextResponse.json(board); // already open — no-op
-      }
-      const updated = await updateBoard(id, (b) => ({
-        ...b,
-        closed: false,
-        participants: [],
-        hostId: null,
-      }));
-      return NextResponse.json(updated);
-    }
-
     case "send-message": {
-      const { participantId, participantName, text, toId, toName, replyToId, replyToText, replyToAuthor } = body;
-      if (!participantId || !participantName) {
-        return NextResponse.json({ error: "participantId and participantName required" }, { status: 400 });
+      const { text, toId, toName, replyToId, replyToText, replyToAuthor } = body;
+      const participantId = sessionParticipantId!;
+      const me = board.participants.find((p) => p.id === participantId);
+      const participantName = me?.name;
+      if (!participantName) {
+        return NextResponse.json({ error: "Participant not found" }, { status: 403 });
       }
       if (!text || typeof text !== "string" || text.trim().length === 0) {
         return NextResponse.json({ error: "Message text required" }, { status: 400 });
@@ -701,7 +780,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const userId = request.nextUrl.searchParams.get("userId");
+  const userId = getUserIdFromRequest(request);
 
   const board = await getBoard(id);
   if (!board) {

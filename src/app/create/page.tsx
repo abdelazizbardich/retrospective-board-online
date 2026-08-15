@@ -95,7 +95,6 @@ export default function CreateBoardPage() {
   // Identity state (if user not logged in)
   const [identityUsername, setIdentityUsername] = useState("");
   const [identityPassword, setIdentityPassword] = useState("");
-  const [identityUsePassword, setIdentityUsePassword] = useState(false);
   const [identityMode, setIdentityMode] = useState<"login" | "register">("login");
   const [identityLoading, setIdentityLoading] = useState(false);
   const [identityError, setIdentityError] = useState("");
@@ -127,7 +126,8 @@ export default function CreateBoardPage() {
       const res = await fetch("/api/boards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), templateId: selectedTemplate, ...(user ? { ownerId: user.id } : {}) }),
+        credentials: "same-origin",
+        body: JSON.stringify({ name: name.trim(), templateId: selectedTemplate }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -200,7 +200,8 @@ export default function CreateBoardPage() {
       const res = await fetch("/api/boards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: importName.trim(), columns: importColumns, ...(user ? { ownerId: user.id } : {}) }),
+        credentials: "same-origin",
+        body: JSON.stringify({ name: importName.trim(), columns: importColumns }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -219,10 +220,11 @@ export default function CreateBoardPage() {
   const handleIdentity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identityUsername.trim()) { setIdentityError("Username is required"); return; }
+    if (identityPassword.length < 8) { setIdentityError("Password must be at least 8 characters"); return; }
     setIdentityLoading(true);
     setIdentityError("");
     const fn = identityMode === "login" ? login : register;
-    const result = await fn(identityUsername.trim(), identityUsePassword ? identityPassword : undefined);
+    const result = await fn(identityUsername.trim(), identityPassword);
     if (!result.success) { setIdentityError(result.error ?? "Something went wrong"); }
     else { setIdentityDone(true); }
     setIdentityLoading(false);
@@ -296,26 +298,14 @@ export default function CreateBoardPage() {
                 maxLength={50}
                 className="rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 w-44"
               />
-              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none self-center">
-                <input
-                  type="checkbox"
-                  checked={identityUsePassword}
-                  onChange={(e) => setIdentityUsePassword(e.target.checked)}
-                  className="rounded"
-                />
-                <Lock className="size-3" />
-                Password
-              </label>
-              {identityUsePassword && (
-                <input
-                  type="password"
-                  value={identityPassword}
-                  onChange={(e) => setIdentityPassword(e.target.value)}
-                  placeholder="Password"
-                  maxLength={200}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 w-44"
-                />
-              )}
+              <input
+                type="password"
+                value={identityPassword}
+                onChange={(e) => setIdentityPassword(e.target.value)}
+                placeholder="Password (min 8)"
+                maxLength={200}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 w-44"
+              />
               <button
                 type="submit"
                 disabled={identityLoading}

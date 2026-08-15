@@ -91,3 +91,25 @@ CREATE TABLE IF NOT EXISTS pages (
   created_at       INTEGER NOT NULL,
   updated_at       INTEGER NOT NULL
 );
+
+-- ─── Users (app accounts for My Boards) ──────────────────────────────────────
+CREATE TABLE IF NOT EXISTS users (
+  id            TEXT PRIMARY KEY,
+  username      TEXT UNIQUE NOT NULL,
+  password_hash TEXT,
+  password_salt TEXT,
+  created_at    BIGINT NOT NULL
+);
+
+-- ─── Row Level Security ──────────────────────────────────────────────────────
+-- App server uses the service role key (bypasses RLS). Enabling RLS with no
+-- policies denies anon/authenticated Data API access as defense in depth.
+ALTER TABLE boards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nav_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blog_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blog_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Public read of published content via service role only — no anon policies.
+-- If you later expose anon key to clients, add explicit SELECT policies here.

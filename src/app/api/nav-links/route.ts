@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getNavLinks, createNavLink } from "@/lib/nav-link-store";
 import { requireAdmin } from "@/app/api/admin/auth/route";
 import type { NavLinkArea } from "@/lib/nav-link-store";
+import { isSafeHref } from "@/lib/safe-url";
 
 /** Public GET — used by SiteHeader / SiteFooter server components */
 export async function GET(request: NextRequest) {
@@ -22,6 +23,12 @@ export async function POST(request: NextRequest) {
   }
   if (area !== "header" && area !== "footer") {
     return NextResponse.json({ error: "area must be 'header' or 'footer'" }, { status: 400 });
+  }
+  if (!isSafeHref(String(href))) {
+    return NextResponse.json(
+      { error: "href must be a relative path or http(s) URL" },
+      { status: 400 }
+    );
   }
 
   const link = await createNavLink({

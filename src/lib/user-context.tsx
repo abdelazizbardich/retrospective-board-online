@@ -18,14 +18,12 @@ export interface AppUser {
 interface UserContextValue {
   user: AppUser | null;
   loading: boolean;
-  login: (username: string, password?: string) => Promise<{ success: boolean; error?: string }>;
-  register: (username: string, password?: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextValue | null>(null);
-
-const STORAGE_KEY = "retro-user";
 
 export function useUser() {
   const ctx = useContext(UserContext);
@@ -37,54 +35,70 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Rehydrate from localStorage on mount
+  // Rehydrate from server session cookie
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setUser(JSON.parse(raw));
-    } catch {
-      // ignore corrupted data
-    }
-    setLoading(false);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth", { credentials: "same-origin" });
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setUser(data);
+        } else if (!cancelled) {
+          setUser(null);
+        }
+      } catch {
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const login = useCallback(async (username: string, password?: string) => {
+  const login = useCallback(async (username: string, password: string) => {
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password: password || undefined, mode: "login" }),
+        credentials: "same-origin",
+        body: JSON.stringify({ username, password, mode: "login" }),
       });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error as string };
       setUser(data);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       return { success: true };
     } catch {
       return { success: false, error: "Network error" };
     }
   }, []);
 
-  const register = useCallback(async (username: string, password?: string) => {
+  const register = useCallback(async (username: string, password: string) => {
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password: password || undefined, mode: "register" }),
+        credentials: "same-origin",
+        body: JSON.stringify({ username, password, mode: "register" }),
       });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error as string };
       setUser(data);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       return { success: true };
     } catch {
       return { success: false, error: "Network error" };
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/auth", { method: "DELETE", credentials: "same-origin" });
+    } catch {
+      // ignore network errors on logout
+    }
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   return (

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateNavLink, deleteNavLink } from "@/lib/nav-link-store";
 import { requireAdmin } from "@/app/api/admin/auth/route";
+import { isSafeHref } from "@/lib/safe-url";
 
 export async function PATCH(
   request: NextRequest,
@@ -14,6 +15,13 @@ export async function PATCH(
 
   if (body.area !== undefined && body.area !== "header" && body.area !== "footer") {
     return NextResponse.json({ error: "area must be 'header' or 'footer'" }, { status: 400 });
+  }
+
+  if (body.href !== undefined && !isSafeHref(String(body.href))) {
+    return NextResponse.json(
+      { error: "href must be a relative path or http(s) URL" },
+      { status: 400 }
+    );
   }
 
   const updated = await updateNavLink(id, {

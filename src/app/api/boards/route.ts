@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createBoard, createBoardFromImport } from "@/lib/board-store";
 import { BOARD_TEMPLATES } from "@/lib/types";
+import { getUserIdFromRequest } from "@/lib/user-session";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { name, templateId, columns: importedColumns, ownerId } = body;
+  const { name, templateId, columns: importedColumns } = body;
+  // Ownership only from verified session — never trust body.ownerId
+  const ownerId = getUserIdFromRequest(request) ?? undefined;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "Board name is required" }, { status: 400 });
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (cleaned.length === 0) {
       return NextResponse.json({ error: "No valid columns found in file" }, { status: 400 });
     }
-    const board = await createBoardFromImport(name.trim(), cleaned, typeof ownerId === "string" ? ownerId : undefined);
+    const board = await createBoardFromImport(name.trim(), cleaned, ownerId);
     return NextResponse.json(board, { status: 201 });
   }
 
@@ -35,6 +38,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid template" }, { status: 400 });
   }
 
-  const board = await createBoard(name.trim(), templateId, typeof ownerId === "string" ? ownerId : undefined);
+  const board = await createBoard(name.trim(), templateId, ownerId);
   return NextResponse.json(board, { status: 201 });
 }

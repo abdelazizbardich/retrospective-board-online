@@ -52,17 +52,17 @@ function AuthForm() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [usePassword, setUsePassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim()) { setError("Username is required"); return; }
+    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
     setLoading(true);
     setError("");
     const fn = mode === "login" ? login : register;
-    const result = await fn(username.trim(), usePassword ? password : undefined);
+    const result = await fn(username.trim(), password);
     if (!result.success) setError(result.error ?? "Something went wrong");
     setLoading(false);
   };
@@ -111,26 +111,18 @@ function AuthForm() {
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium mb-1.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={usePassword}
-                  onChange={(e) => setUsePassword(e.target.checked)}
-                  className="rounded"
-                />
-                <Lock className="size-3.5 text-muted-foreground" />
-                {mode === "login" ? "Use a password" : "Protect with a password (optional)"}
+              <label className="block text-sm font-medium mb-1.5">
+                <Lock className="inline size-3.5 text-muted-foreground mr-1" />
+                Password
               </label>
-              {usePassword && (
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  maxLength={200}
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              )}
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                maxLength={200}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
             </div>
 
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -166,7 +158,7 @@ export default function MyBoardsPage() {
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    fetch(`/api/users/${user.id}/boards`)
+    fetch(`/api/users/${user.id}/boards`, { credentials: "same-origin" })
       .then((r) => r.json())
       .then((d) => { setBoards(d.boards ?? []); setLoading(false); })
       .catch(() => setLoading(false));
@@ -177,7 +169,7 @@ export default function MyBoardsPage() {
     if (!confirm("Delete this board? This cannot be undone.")) return;
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/boards/${id}?userId=${user.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/boards/${id}`, { method: "DELETE", credentials: "same-origin" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         alert((data as { error?: string }).error ?? "Failed to delete board");

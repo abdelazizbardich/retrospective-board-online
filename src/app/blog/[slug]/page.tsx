@@ -11,6 +11,7 @@ import { BlogTagLink } from "@/app/components/blog-tag-link";
 import { BlogPostCard } from "@/app/components/blog-post-card";
 import { JsonLd } from "@/components/json-ld";
 import { blogPostingSchema } from "@/lib/structured-data";
+import { isSafeImageUrl } from "@/lib/safe-url";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
@@ -94,6 +95,7 @@ export default async function BlogPostPage({
         </Link>
 
         {/* Cover image */}
+        {isSafeImageUrl(coverImage) && (
         <div className="rounded-2xl overflow-hidden mb-8 aspect-video bg-muted">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -102,6 +104,7 @@ export default async function BlogPostPage({
             className="h-full w-full object-cover"
           />
         </div>
+        )}
 
         {/* Category */}
         {post.category && (

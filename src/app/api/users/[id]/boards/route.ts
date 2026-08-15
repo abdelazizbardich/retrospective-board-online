@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBoardsByOwner } from "@/lib/board-store";
+import { getUserIdFromRequest } from "@/lib/user-session";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const sessionUserId = getUserIdFromRequest(request);
+  if (!sessionUserId || sessionUserId !== id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const boards = await getBoardsByOwner(id);
     const summaries = boards.map((b) => ({

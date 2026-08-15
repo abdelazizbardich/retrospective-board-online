@@ -30,17 +30,26 @@ function hashPassword(password: string, salt: string): string {
   return crypto.pbkdf2Sync(password, salt, 100_000, 64, "sha512").toString("hex");
 }
 
-export async function createUser(username: string, password?: string): Promise<AppUser> {
+function hashesEqual(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a, "hex");
+    const bufB = Buffer.from(b, "hex");
+    if (bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
+
+export async function createUser(username: string, password: string): Promise<AppUser> {
+  if (!password || password.length < 8) {
+    throw new Error("Password must be at least 8 characters");
+  }
   const id = nanoid(12);
   const now = Date.now();
 
-  let password_hash: string | null = null;
-  let password_salt: string | null = null;
-
-  if (password) {
-    password_salt = crypto.randomBytes(32).toString("hex");
-    password_hash = hashPassword(password, password_salt);
-  }
+  const password_salt = crypto.randomBytes(32).toString("hex");
+  const password_hash = hashPassword(password, password_salt);
 
   const { error } = await getSupabase().from("users").insert({
     id,
@@ -51,7 +60,7 @@ export async function createUser(username: string, password?: string): Promise<A
   });
 
   if (error) throw new Error(error.message);
-  return { id, username, hasPassword: !!password, createdAt: now };
+  return { id, username, hasPassword: true, createdAt: now };
 }
 
 export async function getAllUsers(): Promise<AppUser[]> {
@@ -62,6 +71,20 @@ export async function getAllUsers(): Promise<AppUser[]> {
 
   if (error) throw new Error(error.message);
   return ((data ?? []) as UserRow[]).map(rowToUser);
+}
+
+export async function getUserById(id: string): Promise<AppUser | undefined> {
+  const { data, error } = await getSupabase()
+    .from("users")
+    .select("id, username, password_hash, password_salt, created_at")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") return undefined;
+    throw new Error(error.message);
+  }
+  return rowToUser(data as UserRow);
 }
 
 export async function getUserByUsername(username: string): Promise<AppUser | undefined> {
@@ -79,7 +102,7 @@ export async function getUserByUsername(username: string): Promise<AppUser | und
 }
 
 /** Returns the user if credentials are valid, null otherwise. */
-export async function verifyUser(username: string, password?: string): Promise<AppUser | null> {
+export async function verifyUser(username: string, password: string): Promise<AppUser | null> {
   const { data, error } = await getSupabase()
     .from("users")
     .select("id, username, password_hash, password_salt, created_at")
@@ -90,12 +113,11 @@ export async function verifyUser(username: string, password?: string): Promise<A
 
   const row = data as UserRow;
 
-  // If user has a password, it must be provided and match
-  if (row.password_hash && row.password_salt) {
-    if (!password) return null;
-    const hash = hashPassword(password, row.password_salt);
-    if (hash !== row.password_hash) return null;
-  }
+  // Passwordless accounts are no longer accepted
+  if (!row.password_hash || !row.password_salt || !password) return null;
+
+  const hash = hashPassword(password, row.password_salt);
+  if (!hashesEqual(hash, row.password_hash)) return null;
 
   return rowToUser(row);
 }
