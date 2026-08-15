@@ -50,19 +50,19 @@ function timeAgo(ts: number): string {
 function AuthForm() {
   const { login, register } = useUser();
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim()) { setError("Username is required"); return; }
+    if (!email.trim()) { setError("Email is required"); return; }
     if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
     setLoading(true);
     setError("");
     const fn = mode === "login" ? login : register;
-    const result = await fn(username.trim(), password);
+    const result = await fn(email.trim(), password);
     if (!result.success) setError(result.error ?? "Something went wrong");
     setLoading(false);
   };
@@ -98,14 +98,15 @@ function AuthForm() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Username</label>
+              <label className="block text-sm font-medium mb-1.5">Email</label>
               <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. john_doe"
-                maxLength={50}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                maxLength={254}
                 autoFocus
+                autoComplete="email"
                 className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
@@ -202,7 +203,7 @@ export default function MyBoardsPage() {
           <div className="flex-1" />
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground hidden sm:inline">
-              {user.username}
+              {user.email}
               {user.hasPassword && <Lock className="inline ml-1 size-3 text-muted-foreground" />}
             </span>
             <button
@@ -221,7 +222,7 @@ export default function MyBoardsPage() {
           <div>
             <h1 className="text-2xl font-bold">My Boards</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Welcome back, <span className="font-medium text-foreground">{user.username}</span>!
+              Welcome back, <span className="font-medium text-foreground">{user.email}</span>!
             </p>
           </div>
           <Link

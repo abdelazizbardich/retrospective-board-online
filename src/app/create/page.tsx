@@ -93,7 +93,7 @@ export default function CreateBoardPage() {
   const [mode, setMode] = useState<"template" | "import">("template");
 
   // Identity state (if user not logged in)
-  const [identityUsername, setIdentityUsername] = useState("");
+  const [identityEmail, setIdentityEmail] = useState("");
   const [identityPassword, setIdentityPassword] = useState("");
   const [identityMode, setIdentityMode] = useState<"login" | "register">("login");
   const [identityLoading, setIdentityLoading] = useState(false);
@@ -219,12 +219,12 @@ export default function CreateBoardPage() {
 
   const handleIdentity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identityUsername.trim()) { setIdentityError("Username is required"); return; }
+    if (!identityEmail.trim()) { setIdentityError("Email is required"); return; }
     if (identityPassword.length < 8) { setIdentityError("Password must be at least 8 characters"); return; }
     setIdentityLoading(true);
     setIdentityError("");
     const fn = identityMode === "login" ? login : register;
-    const result = await fn(identityUsername.trim(), identityPassword);
+    const result = await fn(identityEmail.trim(), identityPassword);
     if (!result.success) { setIdentityError(result.error ?? "Something went wrong"); }
     else { setIdentityDone(true); }
     setIdentityLoading(false);
@@ -263,7 +263,7 @@ export default function CreateBoardPage() {
           <div className="mt-6 flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
             <UserCircle2 className="size-5 text-primary shrink-0" />
             <span className="flex-1">
-              Creating as <span className="font-semibold">{user.username}</span>
+              Creating as <span className="font-semibold">{user.email}</span>
               {user.hasPassword && <Lock className="inline ml-1 size-3 text-muted-foreground" />}
               {" — "}
               <Link href="/my-boards" className="text-primary hover:underline">My Boards</Link>
@@ -291,11 +291,12 @@ export default function CreateBoardPage() {
             </div>
             <form onSubmit={handleIdentity} className="flex flex-wrap gap-2 items-start">
               <input
-                type="text"
-                value={identityUsername}
-                onChange={(e) => setIdentityUsername(e.target.value)}
-                placeholder="Username"
-                maxLength={50}
+                type="email"
+                value={identityEmail}
+                onChange={(e) => setIdentityEmail(e.target.value)}
+                placeholder="Email"
+                maxLength={254}
+                autoComplete="email"
                 className="rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 w-44"
               />
               <input

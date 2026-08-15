@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createUser, getUserById, getUserByUsername, verifyUser } from "@/lib/user-store";
+import { createUser, getUserByEmail, getUserById, verifyUser } from "@/lib/user-store";
 import {
   clearUserSessionCookie,
   getUserIdFromRequest,
   setUserSessionCookie,
 } from "@/lib/user-session";
+import { isValidEmail, normalizeEmail } from "@/lib/email";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -26,14 +27,24 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { username, password, mode } = body;
+  const { password, mode } = body;
+  // Accept email (preferred) or legacy username field
+  const rawEmail =
+    typeof body.email === "string"
+      ? body.email
+      : typeof body.username === "string"
+        ? body.username
+        : "";
 
-  if (!username || typeof username !== "string" || username.trim().length < 2) {
-    return NextResponse.json({ error: "Username must be at least 2 characters" }, { status: 400 });
+  if (!rawEmail || typeof rawEmail !== "string") {
+    return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
-  if (username.trim().length > 50) {
-    return NextResponse.json({ error: "Username too long (max 50 characters)" }, { status: 400 });
+
+  const email = normalizeEmail(rawEmail);
+  if (!isValidEmail(email)) {
+    return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
   }
+
   if (typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
     return NextResponse.json(
       { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
@@ -44,15 +55,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Password too long" }, { status: 400 });
   }
 
-  const trimmedUsername = username.trim();
-
   if (mode === "register") {
-    const existing = await getUserByUsername(trimmedUsername);
+    const existing = await getUserByEmail(email);
     if (existing) {
-      return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+      return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
     }
     try {
-      const user = await createUser(trimmedUsername, password);
+      const user = await createUser(email, password);
       const res = NextResponse.json(user, { status: 201 });
       setUserSessionCookie(res, user.id);
       return res;
@@ -62,9 +71,9 @@ export async function POST(request: NextRequest) {
   }
 
   if (mode === "login") {
-    const user = await verifyUser(trimmedUsername, password);
+    const user = await verifyUser(email, password);
     if (!user) {
-      return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
     const res = NextResponse.json(user);
     setUserSessionCookie(res, user.id);

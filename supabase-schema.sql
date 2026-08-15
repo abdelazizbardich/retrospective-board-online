@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS pages (
 );
 
 -- ─── Users (app accounts for My Boards) ──────────────────────────────────────
+-- `username` column stores the account email (unique, lowercased).
 CREATE TABLE IF NOT EXISTS users (
   id            TEXT PRIMARY KEY,
   username      TEXT UNIQUE NOT NULL,

@@ -10,7 +10,7 @@ import {
 
 export interface AppUser {
   id: string;
-  username: string;
+  email: string;
   hasPassword: boolean;
   createdAt: number;
 }
@@ -18,8 +18,8 @@ export interface AppUser {
 interface UserContextValue {
   user: AppUser | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -58,13 +58,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ username, password, mode: "login" }),
+        body: JSON.stringify({ email, password, mode: "login" }),
       });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error as string };
@@ -75,13 +75,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const register = useCallback(async (username: string, password: string) => {
+  const register = useCallback(async (email: string, password: string) => {
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ username, password, mode: "register" }),
+        body: JSON.stringify({ email, password, mode: "register" }),
       });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error as string };

@@ -1,17 +1,18 @@
 import { getSupabase } from "./db";
 import { nanoid } from "nanoid";
 import crypto from "crypto";
+import { normalizeEmail } from "./email";
 
 export interface AppUser {
   id: string;
-  username: string;
+  email: string;
   hasPassword: boolean;
   createdAt: number;
 }
 
 type UserRow = {
   id: string;
-  username: string;
+  username: string; // stores email (unique)
   password_hash: string | null;
   password_salt: string | null;
   created_at: number;
@@ -20,7 +21,7 @@ type UserRow = {
 function rowToUser(row: UserRow): AppUser {
   return {
     id: row.id,
-    username: row.username,
+    email: row.username,
     hasPassword: row.password_hash !== null,
     createdAt: row.created_at,
   };
@@ -41,10 +42,11 @@ function hashesEqual(a: string, b: string): boolean {
   }
 }
 
-export async function createUser(username: string, password: string): Promise<AppUser> {
+export async function createUser(email: string, password: string): Promise<AppUser> {
   if (!password || password.length < 8) {
     throw new Error("Password must be at least 8 characters");
   }
+  const normalized = normalizeEmail(email);
   const id = nanoid(12);
   const now = Date.now();
 
@@ -53,14 +55,14 @@ export async function createUser(username: string, password: string): Promise<Ap
 
   const { error } = await getSupabase().from("users").insert({
     id,
-    username,
+    username: normalized,
     password_hash,
     password_salt,
     created_at: now,
   });
 
   if (error) throw new Error(error.message);
-  return { id, username, hasPassword: true, createdAt: now };
+  return { id, email: normalized, hasPassword: true, createdAt: now };
 }
 
 export async function getAllUsers(): Promise<AppUser[]> {
@@ -87,11 +89,12 @@ export async function getUserById(id: string): Promise<AppUser | undefined> {
   return rowToUser(data as UserRow);
 }
 
-export async function getUserByUsername(username: string): Promise<AppUser | undefined> {
+export async function getUserByEmail(email: string): Promise<AppUser | undefined> {
+  const normalized = normalizeEmail(email);
   const { data, error } = await getSupabase()
     .from("users")
     .select("id, username, password_hash, password_salt, created_at")
-    .eq("username", username)
+    .eq("username", normalized)
     .single();
 
   if (error) {
@@ -102,18 +105,18 @@ export async function getUserByUsername(username: string): Promise<AppUser | und
 }
 
 /** Returns the user if credentials are valid, null otherwise. */
-export async function verifyUser(username: string, password: string): Promise<AppUser | null> {
+export async function verifyUser(email: string, password: string): Promise<AppUser | null> {
+  const normalized = normalizeEmail(email);
   const { data, error } = await getSupabase()
     .from("users")
     .select("id, username, password_hash, password_salt, created_at")
-    .eq("username", username)
+    .eq("username", normalized)
     .single();
 
   if (error || !data) return null;
 
   const row = data as UserRow;
 
-  // Passwordless accounts are no longer accepted
   if (!row.password_hash || !row.password_salt || !password) return null;
 
   const hash = hashPassword(password, row.password_salt);

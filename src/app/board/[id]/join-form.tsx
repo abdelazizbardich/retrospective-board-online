@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useBoardContext } from "@/lib/board-context";
 import { useUser } from "@/lib/user-context";
+import { displayNameFromEmail } from "@/lib/email";
 import { LayoutGrid, UserCircle2, Link2, Clock, XCircle } from "lucide-react";
 
 export function JoinForm({ boardName }: { boardName: string }) {
@@ -12,7 +13,7 @@ export function JoinForm({ boardName }: { boardName: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // If user is logged in, auto-join with their username (once per session)
+  // If user is logged in, auto-join with a display name from their email (once per session)
   useEffect(() => {
     if (!user || pendingRequestId || joinRejected) return;
 
@@ -21,7 +22,7 @@ export function JoinForm({ boardName }: { boardName: string }) {
 
     if (participant && !needsHostReclaim) return;
 
-    joinBoard(user.username, user.id).catch(() => {});
+    joinBoard(displayNameFromEmail(user.email), user.id).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, board?.ownerId, board?.hostId, participant?.id, pendingRequestId, joinRejected]);
 
@@ -112,7 +113,7 @@ export function JoinForm({ boardName }: { boardName: string }) {
             <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-brand-blue-bg border border-brand-blue-border-light">
               <UserCircle2 className="size-7 text-brand-blue-stripe animate-pulse" />
             </div>
-            <h1 className="text-xl font-bold">Joining as {user.username}</h1>
+            <h1 className="text-xl font-bold">Joining as {displayNameFromEmail(user.email)}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Joining <span className="font-semibold text-foreground">{boardName}</span>…
             </p>

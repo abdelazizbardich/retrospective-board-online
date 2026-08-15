@@ -5,7 +5,7 @@ import { RefreshCw, Search } from "lucide-react";
 
 interface UserSummary {
   id: string;
-  username: string;
+  email: string;
   hasPassword: boolean;
   createdAt: number;
 }
@@ -41,7 +41,7 @@ export default function UsersPage() {
 
   const filtered = users.filter(
     (u) =>
-      u.username.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
       u.id.includes(search)
   );
 
@@ -66,7 +66,7 @@ export default function UsersPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Search by username or ID…"
+          placeholder="Search by email or ID…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-xl border border-border bg-background pl-9 pr-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -86,7 +86,7 @@ export default function UsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40">
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Username</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Email</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden sm:table-cell">Password</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden md:table-cell">Created</th>
               </tr>
@@ -98,7 +98,7 @@ export default function UsersPage() {
                   className={`${i < filtered.length - 1 ? "border-b border-border/60" : ""} hover:bg-muted/30 transition-colors`}
                 >
                   <td className="px-4 py-3">
-                    <p className="font-medium">{u.username}</p>
+                    <p className="font-medium">{u.email}</p>
                     <p className="text-xs text-muted-foreground font-mono">{u.id}</p>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
