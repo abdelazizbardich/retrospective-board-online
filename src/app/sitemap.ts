@@ -14,6 +14,11 @@ import { getAllPages } from "@/lib/page-store";
 
 export const revalidate = 3600;
 
+/** Next.js sitemap XML does not escape `&` in loc URLs; encode for valid XML. */
+function sitemapLoc(url: string): string {
+  return url.replace(/&/g, "&amp;");
+}
+
 function collectUniqueTags(posts: BlogPost[]): string[] {
   const tags = new Set<string>();
   for (const post of posts) {
@@ -33,7 +38,7 @@ async function blogFilterRoutes(
   const routes: MetadataRoute.Sitemap = [];
   for (let page = 1; page <= totalPages; page++) {
     routes.push({
-      url: `${SITE_URL}${blogSearchHref(filters, page)}`,
+      url: sitemapLoc(`${SITE_URL}${blogSearchHref(filters, page)}`),
       changeFrequency: "weekly",
       priority: page === 1 ? 0.6 : 0.5,
     });
@@ -53,37 +58,37 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticRoutes: MetadataRoute.Sitemap = [
     {
-      url: SITE_URL,
+      url: sitemapLoc(SITE_URL),
       changeFrequency: "weekly",
       priority: 1,
     },
     {
-      url: `${SITE_URL}/create`,
+      url: sitemapLoc(`${SITE_URL}/create`),
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
-      url: `${SITE_URL}/templates/starfish`,
+      url: sitemapLoc(`${SITE_URL}/templates/starfish`),
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
-      url: `${SITE_URL}/contact`,
+      url: sitemapLoc(`${SITE_URL}/contact`),
       changeFrequency: "monthly",
       priority: 0.6,
     },
     {
-      url: `${SITE_URL}/terms`,
+      url: sitemapLoc(`${SITE_URL}/terms`),
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
-      url: `${SITE_URL}/privacy`,
+      url: sitemapLoc(`${SITE_URL}/privacy`),
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
-      url: `${SITE_URL}/blog`,
+      url: sitemapLoc(`${SITE_URL}/blog`),
       changeFrequency: "daily",
       priority: 0.9,
     },
@@ -92,21 +97,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blogPagination: MetadataRoute.Sitemap = Array.from(
     { length: Math.max(0, blogIndex.totalPages - 1) },
     (_, index) => ({
-      url: `${SITE_URL}/blog?page=${index + 2}`,
+      url: sitemapLoc(`${SITE_URL}/blog?page=${index + 2}`),
       changeFrequency: "daily" as const,
       priority: 0.7,
     })
   );
 
   const blogPostRoutes: MetadataRoute.Sitemap = posts.map((post) => ({
-    url: `${SITE_URL}/blog/${post.slug}`,
+    url: sitemapLoc(`${SITE_URL}/blog/${post.slug}`),
     lastModified: new Date(post.updatedAt),
     changeFrequency: "monthly",
     priority: 0.8,
   }));
 
   const cmsPageRoutes: MetadataRoute.Sitemap = cmsPages.map((page) => ({
-    url: `${SITE_URL}/p/${page.slug}`,
+    url: sitemapLoc(`${SITE_URL}/p/${page.slug}`),
     lastModified: new Date(page.updatedAt),
     changeFrequency: "monthly",
     priority: 0.5,
