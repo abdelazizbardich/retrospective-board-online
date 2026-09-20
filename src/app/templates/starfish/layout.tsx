@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { buildDocumentTitle } from "@/lib/seo/meta";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
 export const metadata: Metadata = {
-  title: "Starfish Retrospective Template — Free Online Board",
+  title: buildDocumentTitle("Starfish Retrospective"),
   description:
     "Run a Starfish retrospective online with five colored arms: More, Less, Start, Stop, and Keep. Free radial board for agile teams — no sign-up required.",
   alternates: { canonical: `${SITE_URL}/templates/starfish` },

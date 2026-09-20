@@ -18,11 +18,17 @@ function getFilterLabel(category?: string, tag?: string, q?: string) {
   return "Search";
 }
 
-function getFilterDescription(category?: string, tag?: string, q?: string) {
-  if (q) return `Blog posts matching “${q}”.`;
-  if (category) return `Browse blog posts filtered by category “${category}”.`;
-  if (tag) return `Browse blog posts filtered by tag “${tag}”.`;
-  return "Browse filtered blog posts.";
+function getFilterDescription(
+  category?: string,
+  tag?: string,
+  q?: string,
+  page = 1
+) {
+  const pageNote = page > 1 ? ` Page ${page}.` : "";
+  if (q) return `Blog posts matching “${q}”.${pageNote}`;
+  if (category) return `Browse blog posts in category “${category}”.${pageNote}`;
+  if (tag) return `Browse blog posts tagged “${tag}”.${pageNote}`;
+  return `Browse filtered blog posts.${pageNote}`;
 }
 
 export async function generateMetadata({
@@ -34,16 +40,17 @@ export async function generateMetadata({
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const label = getFilterLabel(category, tag, q);
   const pageSuffix = page > 1 ? ` — Page ${page}` : "";
+  const description = getFilterDescription(category, tag, q, page);
 
   return {
-    title: `${label}${pageSuffix} — SprintsPlans Blog`,
-    description: getFilterDescription(category, tag, q),
+    title: `${label}${pageSuffix}`,
+    description,
     alternates: {
       canonical: `${SITE_URL}${blogSearchHref({ category, tag, q }, page)}`,
     },
     openGraph: {
       title: `${label}${pageSuffix} — SprintsPlans Blog`,
-      description: getFilterDescription(category, tag, q),
+      description,
       url: `${SITE_URL}${blogSearchHref({ category, tag, q }, page)}`,
       type: "website",
     },

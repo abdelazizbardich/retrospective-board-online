@@ -5,7 +5,8 @@ import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "How SprintsPlans collects, uses, and protects your data.",
+  description:
+    "SprintsPlans privacy policy: what we collect when you run a retro, how long we keep board data, and your choices.",
   alternates: { canonical: `${SITE_URL}/privacy` },
 };
 

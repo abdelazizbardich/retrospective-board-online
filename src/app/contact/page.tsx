@@ -6,7 +6,8 @@ import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Get in touch with the SprintsPlans team.",
+  description:
+    "Contact SprintsPlans for product questions, bug reports, or partnership ideas. We read every message and reply by email.",
   alternates: { canonical: `${SITE_URL}/contact` },
 };
 
@@ -35,6 +36,20 @@ export default function ContactPage() {
             </div>
           </a>
         </div>
+
+        <section className="mt-12 space-y-4 text-muted-foreground">
+          <h2 className="text-lg font-semibold text-foreground">How we can help</h2>
+          <p className="leading-relaxed">
+            Ask about running your first online retrospective, reporting a problem with a board, or
+            suggesting a feature for agile facilitators. We typically respond within two business
+            days.
+          </p>
+          <p className="leading-relaxed">
+            For urgent board access issues, include your board link and the email you used if you
+            signed in. We do not offer phone support; email and the form below are the fastest ways
+            to reach us.
+          </p>
+        </section>
 
         <div className="mt-12 rounded-2xl border border-border bg-muted/30 p-8">
           <h2 className="text-lg font-semibold">Send us a message</h2>

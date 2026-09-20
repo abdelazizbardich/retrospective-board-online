@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { Metadata } from "next";
+import { buildDocumentTitle } from "@/lib/seo/meta";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 import { StarfishTemplatePreview } from "@/app/create/starfish-template-preview";
 import { SailboatTemplatePreview } from "@/app/create/sailboat-template-preview";
@@ -26,7 +27,7 @@ function templateHref(id: string) {
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
 export const metadata: Metadata = {
-  title: "Free Online Retrospective Board for Agile Teams",
+  title: buildDocumentTitle("Free Online Retrospective Board"),
   description:
     "Run better agile retrospectives online. Collect feedback, vote anonymously, and turn insights into action — in real time. Free for everyone.",
   alternates: { canonical: SITE_URL },
@@ -176,6 +177,7 @@ export default function Home() {
 
         {/* Board preview mock */}
         <div className="mx-auto max-w-5xl px-6 pb-20">
+          <h2 className="sr-only">Example retrospective board</h2>
           <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
             {/* Browser chrome */}
             <div className="flex items-center gap-2 border-b border-border bg-muted/60 px-4 py-3">

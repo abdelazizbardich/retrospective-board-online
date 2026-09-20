@@ -377,7 +377,7 @@ export default function CreateBoardPage() {
             </div>
 
             <div>
-              <p className="text-sm font-semibold mb-4">Choose a template</p>
+              <h2 className="text-sm font-semibold mb-4">Choose a template</h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {BOARD_TEMPLATES.map((template) => (
                   <button

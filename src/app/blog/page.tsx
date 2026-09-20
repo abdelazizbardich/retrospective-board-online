@@ -16,6 +16,8 @@ import { BlogSearchForm } from "@/app/components/blog-search-form";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
+export const revalidate = 3600;
+
 
 
 export async function generateMetadata({
@@ -33,14 +35,14 @@ export async function generateMetadata({
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
   const pageSuffix = page > 1 ? ` — Page ${page}` : "";
-
-
+  const description =
+    page > 1
+      ? `Page ${page} of the SprintsPlans blog — agile retrospective guides, facilitation tips, and team improvement articles.`
+      : "Agile retrospective guides, facilitation tips, and team improvement articles from SprintsPlans.";
 
   return {
-
-    title: `Blog${pageSuffix} — SprintsPlans`,
-
-    description: "Tips, guides, and insights on agile retrospectives and team collaboration.",
+    title: `Blog${pageSuffix}`,
+    description,
 
     alternates: {
 
@@ -49,10 +51,8 @@ export async function generateMetadata({
     },
 
     openGraph: {
-
       title: `Blog${pageSuffix} — SprintsPlans`,
-
-      description: "Tips, guides, and insights on agile retrospectives and team collaboration.",
+      description,
 
       url: page > 1 ? `${SITE_URL}/blog?page=${page}` : `${SITE_URL}/blog`,
 

@@ -12,8 +12,11 @@ import { BlogPostCard } from "@/app/components/blog-post-card";
 import { JsonLd } from "@/components/json-ld";
 import { blogPostingSchema } from "@/lib/structured-data";
 import { isSafeImageUrl } from "@/lib/safe-url";
+import { buildDocumentTitle, clampMetaDescription } from "@/lib/seo/meta";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
+
+export const revalidate = 3600;
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
@@ -24,13 +27,17 @@ export async function generateMetadata(
   const coverImage = getPostCoverImage(post);
   const coverImageAlt = getPostCoverImageAlt(post);
   const seoTitle = post.seoTitle || post.title;
-  const description = post.metaDescription || post.excerpt || undefined;
+  const description = clampMetaDescription(
+    post.metaDescription || post.excerpt || undefined
+  );
   const canonical = post.canonicalUrl || `${SITE_URL}/blog/${slug}`;
   const ogTitle = post.ogTitle || seoTitle;
-  const ogDescription = post.ogDescription || description;
+  const ogDescription = clampMetaDescription(post.ogDescription || description);
   const ogImage = post.ogImage || coverImage;
   const twitterTitle = post.twitterTitle || ogTitle;
-  const twitterDescription = post.twitterDescription || ogDescription;
+  const twitterDescription = clampMetaDescription(
+    post.twitterDescription || ogDescription
+  );
   const twitterImage = post.twitterImage || ogImage;
 
   const robots = {
@@ -39,7 +46,7 @@ export async function generateMetadata(
   };
 
   return {
-    title: `${seoTitle} — SprintsPlans Blog`,
+    title: buildDocumentTitle(seoTitle),
     description,
     alternates: { canonical },
     robots,

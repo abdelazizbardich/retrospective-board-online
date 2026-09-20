@@ -5,7 +5,8 @@ import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "The terms and conditions governing your use of SprintsPlans.",
+  description:
+    "Read the SprintsPlans terms of service: acceptable use, account rules, and limits of liability for our free retrospective board.",
   alternates: { canonical: `${SITE_URL}/terms` },
 };
 

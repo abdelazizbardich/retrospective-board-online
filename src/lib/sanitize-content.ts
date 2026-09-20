@@ -13,5 +13,8 @@ export function sanitizeContent(html: string): string {
       img: ["src", "alt", "title", "width", "height", "class"],
     },
     allowedSchemes: ["http", "https", "mailto"],
+    transformTags: {
+      h1: "h2",
+    },
   });
 }

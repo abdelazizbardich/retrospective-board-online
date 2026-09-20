@@ -2,7 +2,10 @@ import { redirect } from "next/navigation";
 import { isAdminAuthenticated } from "@/app/api/admin/auth/route";
 import { DashboardShell } from "@/app/dashboard/(protected)/dashboard-shell";
 
-export const metadata = { title: "Admin Dashboard — SprintsPlans" };
+export const metadata = {
+  title: "Admin Dashboard",
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const authenticated = await isAdminAuthenticated();
