@@ -23,18 +23,18 @@ export default function ContactPage() {
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
-          <a
-            href={`mailto:${SITE_EMAIL}`}
-            className="group flex items-start gap-4 rounded-2xl border border-border bg-background p-6 transition-shadow hover:shadow-md"
-          >
+          <div className="flex items-start gap-4 rounded-2xl border border-border bg-background p-6">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Mail className="size-5" />
             </div>
             <div>
               <p className="font-semibold">Email</p>
               <p className="mt-1 text-sm text-muted-foreground break-all">{SITE_EMAIL}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Copy the address above or use the form below — we do not use redirect links for email.
+              </p>
             </div>
-          </a>
+          </div>
         </div>
 
         <section className="mt-12 space-y-4 text-muted-foreground">

@@ -8,8 +8,17 @@ import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 import { BlogPostCard } from "@/app/components/blog-post-card";
 import { BlogPagination } from "@/app/components/blog-pagination";
 import { BlogSearchForm } from "@/app/components/blog-search-form";
+import { buildDocumentTitle, ensureMetaDescription } from "@/lib/seo/meta";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
+
+export const revalidate = 3600;
+
+function truncateLabel(value: string, max: number): string {
+  const trimmed = value.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1).trimEnd()}…`;
+}
 
 function getFilterLabel(category?: string, tag?: string, q?: string) {
   if (q) return `Results for “${q}”`;
@@ -18,17 +27,47 @@ function getFilterLabel(category?: string, tag?: string, q?: string) {
   return "Search";
 }
 
+function getSearchPageTitle(category?: string, tag?: string, q?: string, page = 1) {
+  const pageSuffix = page > 1 ? ` · Page ${page}` : "";
+  if (tag) return `Tag: ${truncateLabel(tag, 36)}${pageSuffix}`;
+  if (category) return `Category: ${truncateLabel(category, 32)}${pageSuffix}`;
+  if (q) return `Search: ${truncateLabel(q, 32)}${pageSuffix}`;
+  return `Blog search${pageSuffix}`;
+}
+
+function getFilterTopic(category?: string, tag?: string, q?: string) {
+  if (tag) return `the “${tag}” tag`;
+  if (category) return `the “${category}” category`;
+  if (q) return `“${q}”`;
+  return "this topic";
+}
+
 function getFilterDescription(
   category?: string,
   tag?: string,
   q?: string,
-  page = 1
+  page = 1,
+  total?: number
 ) {
-  const pageNote = page > 1 ? ` Page ${page}.` : "";
-  if (q) return `Blog posts matching “${q}”.${pageNote}`;
-  if (category) return `Browse blog posts in category “${category}”.${pageNote}`;
-  if (tag) return `Browse blog posts tagged “${tag}”.${pageNote}`;
-  return `Browse filtered blog posts.${pageNote}`;
+  const topic = getFilterTopic(category, tag, q);
+  const countPrefix =
+    total != null && total > 0 ? `${total} articles on ${topic}` : `Articles on ${topic}`;
+  const pageNote = page > 1 ? `, page ${page}` : "";
+  return ensureMetaDescription(undefined, `${countPrefix}${pageNote}`);
+}
+
+function getIntroCopy(
+  category?: string,
+  tag?: string,
+  q?: string,
+  total?: number
+) {
+  const topic = getFilterTopic(category, tag, q);
+  const count =
+    total != null && total > 0
+      ? `${total} published article${total === 1 ? "" : "s"}`
+      : "Articles";
+  return `${count} on ${topic}. These posts cover sprint retrospectives, facilitation techniques, remote team practices, and actionable improvements you can try on your next board — many with free templates you can run on SprintsPlans.`;
 }
 
 export async function generateMetadata({
@@ -40,10 +79,19 @@ export async function generateMetadata({
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const label = getFilterLabel(category, tag, q);
   const pageSuffix = page > 1 ? ` — Page ${page}` : "";
-  const description = getFilterDescription(category, tag, q, page);
+  const { total } = await getBlogPostsFiltered(
+    {
+      category: category?.trim() || undefined,
+      tag: tag?.trim() || undefined,
+      q: q?.trim() || undefined,
+    },
+    page
+  );
+  const description = getFilterDescription(category, tag, q, page, total);
+  const title = buildDocumentTitle(getSearchPageTitle(category, tag, q, page));
 
   return {
-    title: `${label}${pageSuffix}`,
+    title,
     description,
     alternates: {
       canonical: `${SITE_URL}${blogSearchHref({ category, tag, q }, page)}`,
@@ -85,6 +133,7 @@ export default async function BlogSearchPage({
   }
 
   const label = getFilterLabel(filters.category, filters.tag, filters.q);
+  const intro = getIntroCopy(filters.category, filters.tag, filters.q, total);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -100,6 +149,7 @@ export default async function BlogSearchPage({
             Back to Blog
           </Link>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{label}</h1>
+          <p className="mt-4 text-lg text-muted-foreground leading-relaxed">{intro}</p>
           <p className="mt-4 flex flex-wrap items-center gap-2 text-lg text-muted-foreground">
             {filters.category && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">

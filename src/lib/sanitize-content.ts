@@ -1,8 +1,9 @@
 import sanitizeHtml from "sanitize-html";
+import { rewriteLegacyBlogLinks } from "./blog-legacy-redirects";
 
 /** Sanitize rich-text HTML for safe server-side rendering (no jsdom required). */
 export function sanitizeContent(html: string): string {
-  return sanitizeHtml(html, {
+  const sanitized = sanitizeHtml(html, {
     allowedTags: [
       "p", "br", "strong", "b", "em", "i", "s", "del", "strike", "code",
       "h1", "h2", "h3", "h4", "h5", "h6",
@@ -17,4 +18,5 @@ export function sanitizeContent(html: string): string {
       h1: "h2",
     },
   });
+  return rewriteLegacyBlogLinks(sanitized);
 }

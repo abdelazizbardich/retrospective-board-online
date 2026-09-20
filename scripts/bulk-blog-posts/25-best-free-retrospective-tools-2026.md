@@ -94,7 +94,7 @@ Parabol targets Agile meeting workflows including retrospectives, with emphasis 
 
 - Async-friendly input before live discussion
 - Integrated meeting patterns beyond retro alone
-- Option in [Parabol alternatives](https://sprintsplans.com/blog/10-best-parabol-alternatives-for-agile-retrospectives-in-2026) lists when teams shop the market
+- Option in [Parabol alternatives](https://sprintsplans.com/blog/parabol-alternatives) lists when teams shop the market
 
 **Consider if:**
 

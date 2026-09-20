@@ -12,7 +12,7 @@ import { BlogPostCard } from "@/app/components/blog-post-card";
 import { JsonLd } from "@/components/json-ld";
 import { blogPostingSchema } from "@/lib/structured-data";
 import { isSafeImageUrl } from "@/lib/safe-url";
-import { buildDocumentTitle, clampMetaDescription } from "@/lib/seo/meta";
+import { buildDocumentTitle, clampMetaDescription, ensureMetaDescription } from "@/lib/seo/meta";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
@@ -27,8 +27,9 @@ export async function generateMetadata(
   const coverImage = getPostCoverImage(post);
   const coverImageAlt = getPostCoverImageAlt(post);
   const seoTitle = post.seoTitle || post.title;
-  const description = clampMetaDescription(
-    post.metaDescription || post.excerpt || undefined
+  const description = ensureMetaDescription(
+    post.metaDescription || post.excerpt || undefined,
+    seoTitle
   );
   const canonical = post.canonicalUrl || `${SITE_URL}/blog/${slug}`;
   const ogTitle = post.ogTitle || seoTitle;

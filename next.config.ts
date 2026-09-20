@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { LEGACY_BLOG_SLUG_REDIRECTS } from "./src/lib/blog-legacy-redirects";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -54,6 +55,14 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
     ];
+  },
+
+  async redirects() {
+    return Object.entries(LEGACY_BLOG_SLUG_REDIRECTS).map(([fromSlug, toSlug]) => ({
+      source: `/blog/${fromSlug}`,
+      destination: `/blog/${toSlug}`,
+      permanent: true,
+    }));
   },
 };
 

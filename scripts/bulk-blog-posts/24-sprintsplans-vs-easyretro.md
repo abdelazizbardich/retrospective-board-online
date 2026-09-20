@@ -132,7 +132,7 @@ If EasyRetro is not the only alternative you are weighing, broader comparisons h
 
 - [SprintsPlans vs Parabol](https://sprintsplans.com/blog/sprintsplans-vs-parabol) — another popular retro-first platform
 - [SprintsPlans vs Miro for retrospectives](https://sprintsplans.com/blog/sprintsplans-vs-miro-retrospectives) — purpose-built vs general whiteboard
-- [Parabol alternatives](https://sprintsplans.com/blog/10-best-parabol-alternatives-for-agile-retrospectives-in-2026) — wider market landscape
+- [Parabol alternatives](https://sprintsplans.com/blog/parabol-alternatives) — wider market landscape
 
 EasyRetro and SprintsPlans both compete as focused retro tools rather than all-in-one whiteboards — a meaningful distinction when Miro or FigJam tempt you with flexibility you may not need.
 
