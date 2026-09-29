@@ -85,11 +85,14 @@ export async function deleteBoard(id: string): Promise<boolean> {
 export async function getAllBoards(): Promise<Board[]> {
   const { data, error } = await getSupabase()
     .from("boards")
-    .select("data")
+    .select("data, owner_id")
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => row.data as Board);
+  return (data ?? []).map((row) => {
+    const board = row.data as Board;
+    return row.owner_id ? { ...board, ownerId: row.owner_id as string } : board;
+  });
 }
 
 export async function getBoardsByOwner(ownerId: string): Promise<Board[]> {

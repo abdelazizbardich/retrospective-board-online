@@ -89,6 +89,17 @@ export async function getUserById(id: string): Promise<AppUser | undefined> {
   return rowToUser(data as UserRow);
 }
 
+export async function getUsersByIds(ids: string[]): Promise<AppUser[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await getSupabase()
+    .from("users")
+    .select("id, username, password_hash, password_salt, created_at")
+    .in("id", ids);
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as UserRow[]).map(rowToUser);
+}
+
 export async function getUserByEmail(email: string): Promise<AppUser | undefined> {
   const normalized = normalizeEmail(email);
   const { data, error } = await getSupabase()

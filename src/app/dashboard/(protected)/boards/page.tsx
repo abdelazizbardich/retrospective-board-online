@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Trash2, ExternalLink, RefreshCw, Search } from "lucide-react";
+import { Trash2, ExternalLink, RefreshCw, Search, Eye } from "lucide-react";
 
 interface BoardSummary {
   id: string;
@@ -13,6 +13,8 @@ interface BoardSummary {
   cardCount: number;
   columnCount: number;
   hostId: string | null;
+  ownerEmail: string | null;
+  hostName: string | null;
 }
 
 const PHASE_COLORS: Record<string, string> = {
@@ -98,6 +100,7 @@ export default function BoardsPage() {
             <thead>
               <tr className="border-b border-border bg-muted/40">
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Name</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden sm:table-cell">Created by</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden sm:table-cell">Phase</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden md:table-cell">Columns</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground hidden md:table-cell">Cards</th>
@@ -117,6 +120,17 @@ export default function BoardsPage() {
                     <p className="text-xs text-muted-foreground font-mono">{b.id}</p>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
+                    {b.ownerEmail ? (
+                      <p className="truncate max-w-[14rem]" title={b.ownerEmail}>{b.ownerEmail}</p>
+                    ) : b.hostName ? (
+                      <p className="text-muted-foreground">
+                        {b.hostName} <span className="text-xs">(guest)</span>
+                      </p>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 hidden sm:table-cell">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${PHASE_COLORS[b.phase] ?? "bg-muted text-muted-foreground"}`}>
                       {b.phase}
                     </span>
@@ -129,6 +143,13 @@ export default function BoardsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/dashboard/boards/${b.id}`}
+                        className="flex size-7 items-center justify-center rounded-lg border border-border hover:border-primary/40 hover:text-primary transition-colors"
+                        title="View silently (participants won't see you)"
+                      >
+                        <Eye className="size-3.5" />
+                      </Link>
                       <Link
                         href={`/board/${b.id}`}
                         target="_blank"
