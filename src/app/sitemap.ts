@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { SITE_URL } from "@/lib/config";
 import { getCachedPublishedBlogPosts, getCachedPublishedPages } from "@/lib/public-content";
+import { BOARD_TEMPLATES } from "@/lib/types";
 
 export const revalidate = 3600;
 
@@ -31,10 +32,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
-      url: sitemapLoc(`${SITE_URL}/templates/starfish`),
+      url: sitemapLoc(`${SITE_URL}/templates`),
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    ...BOARD_TEMPLATES.map((template) => ({
+      url: sitemapLoc(`${SITE_URL}/templates/${template.id}`),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
     {
       url: sitemapLoc(`${SITE_URL}/contact`),
       changeFrequency: "monthly",

@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { buildDocumentTitle } from "@/lib/seo/meta";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 import { StarfishTemplatePreview } from "@/app/create/starfish-template-preview";
@@ -21,7 +22,7 @@ import { getSailboatSectionFillColor } from "@/app/board/[id]/sailboat-geometry"
 import { BOARD_TEMPLATES, hasIllustratedLayout } from "@/lib/types";
 
 function templateHref(id: string) {
-  return id === "starfish" ? "/templates/starfish" : `/create?template=${id}`;
+  return `/templates/${id}`;
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
@@ -270,7 +271,11 @@ export default function Home() {
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground leading-relaxed">
               Pick a format that fits your team — from classic three-column boards to the radial
-              Starfish layout.
+              Starfish layout.{" "}
+              <Link href="/templates" className="font-semibold text-primary hover:opacity-80">
+                Browse all templates
+              </Link>
+              .
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -320,13 +325,13 @@ export default function Home() {
                     </span>
                   ))}
                 </div>
-                <a
+                <Link
                   href={templateHref(template.id)}
                   className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-80 transition-opacity"
                 >
-                  {template.id === "starfish" ? "Explore Starfish" : "Use template"}
+                  Explore template
                   <ArrowRight className="size-4" />
-                </a>
+                </Link>
               </div>
             ))}
           </div>

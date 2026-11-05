@@ -1,9 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getCachedNavLinks } from "@/lib/public-content";
+import type { NavLink, NavLinkArea } from "@/lib/nav-link-store";
+
+async function loadNav(area: NavLinkArea): Promise<NavLink[]> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return [];
+  }
+  return getCachedNavLinks(area);
+}
 
 export async function SiteHeader() {
-  const links = await getCachedNavLinks("header");
+  const links = await loadNav("header");
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
@@ -56,7 +64,7 @@ export async function SiteHeader() {
 }
 
 export async function SiteFooter() {
-  const links = await getCachedNavLinks("footer");
+  const links = await loadNav("footer");
 
   return (
     <footer className="border-t border-border py-8">
