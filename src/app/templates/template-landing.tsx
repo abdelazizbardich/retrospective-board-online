@@ -110,7 +110,7 @@ export function TemplateLanding({ page }: { page: TemplatePageContent }) {
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
                   {page.intro}
                 </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   <Link href={createHref} className={PRIMARY_CTA}>
                     Use this template free
                     <ArrowRight className="size-4" />
@@ -120,6 +120,12 @@ export function TemplateLanding({ page }: { page: TemplatePageContent }) {
                     className="inline-flex min-h-11 items-center justify-center gap-1 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded-sm"
                   >
                     Browse all templates <ArrowRight className="size-4" />
+                  </Link>
+                  <Link
+                    href="/compare"
+                    className="inline-flex min-h-11 items-center justify-center gap-1 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded-sm"
+                  >
+                    Compare tools <ArrowRight className="size-4" />
                   </Link>
                 </div>
                 <p className="mt-4 text-sm text-muted-foreground">

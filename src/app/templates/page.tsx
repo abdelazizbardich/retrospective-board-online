@@ -279,6 +279,26 @@ export default function TemplatesHubPage() {
             </div>
           </section>
 
+          <section className="border-t border-border py-24">
+            <div className="mx-auto max-w-3xl px-6">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Looking for an EasyRetro or Miro alternative?
+              </h2>
+              <p className="mt-4 leading-relaxed text-muted-foreground">
+                Formats are one decision. Vendors are another. We publish honest side-by-sides of
+                EasyRetro, Retrium, TeamRetro, Parabol, and Miro — including when those tools are
+                the better fit, and when a free SprintsPlans board is enough.
+              </p>
+              <Link
+                href="/compare"
+                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-semibold text-primary hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                Compare retrospective tools
+                <ArrowRight className="size-4" />
+              </Link>
+            </div>
+          </section>
+
           <section className="border-t border-border bg-brand-blue-bg/40 py-24">
             <div className="mx-auto max-w-3xl px-6 text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
