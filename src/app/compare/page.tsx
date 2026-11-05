@@ -163,7 +163,15 @@ export default function CompareHubPage() {
                 Pricing snapshot
               </h2>
               <p className="mt-4 max-w-3xl leading-relaxed text-muted-foreground">
-                {compareHub.pricingNote}
+                {compareHub.pricingNote}{" "}
+                SprintsPlans itself has no paid tier — see{" "}
+                <Link
+                  href="/pricing"
+                  className="rounded-sm font-semibold text-primary hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  free retrospective board pricing
+                </Link>
+                .
               </p>
               <div className="mt-10 overflow-x-auto overscroll-contain rounded-2xl border border-border">
                 <table className="w-full min-w-[44rem] text-left text-sm">

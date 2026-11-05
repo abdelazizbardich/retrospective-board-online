@@ -289,13 +289,22 @@ export default function TemplatesHubPage() {
                 EasyRetro, Retrium, TeamRetro, Parabol, and Miro — including when those tools are
                 the better fit, and when a free SprintsPlans board is enough.
               </p>
-              <Link
-                href="/compare"
-                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-semibold text-primary hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              >
-                Compare retrospective tools
-                <ArrowRight className="size-4" />
-              </Link>
+              <div className="mt-6 flex flex-wrap items-center gap-4">
+                <Link
+                  href="/compare"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-semibold text-primary hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  Compare retrospective tools
+                  <ArrowRight className="size-4" />
+                </Link>
+                <Link
+                  href="/pricing"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  See pricing
+                  <ArrowRight className="size-4" />
+                </Link>
+              </div>
             </div>
           </section>
 

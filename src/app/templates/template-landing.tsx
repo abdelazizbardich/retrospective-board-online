@@ -127,6 +127,12 @@ export function TemplateLanding({ page }: { page: TemplatePageContent }) {
                   >
                     Compare tools <ArrowRight className="size-4" />
                   </Link>
+                  <Link
+                    href="/pricing"
+                    className="inline-flex min-h-11 items-center justify-center gap-1 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded-sm"
+                  >
+                    Pricing <ArrowRight className="size-4" />
+                  </Link>
                 </div>
                 <p className="mt-4 text-sm text-muted-foreground">
                   Free · No sign-up for participants · Ready in seconds

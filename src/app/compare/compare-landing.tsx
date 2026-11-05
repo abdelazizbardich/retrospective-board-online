@@ -185,6 +185,13 @@ export function CompareLanding({ page }: { page: ComparePageContent }) {
                 >
                   {page.competitorName} pricing
                 </a>
+                . SprintsPlans:{" "}
+                <Link
+                  href="/pricing"
+                  className="rounded-sm font-semibold text-primary hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  free, no paid plan
+                </Link>
                 .
               </p>
             </div>
