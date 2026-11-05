@@ -174,7 +174,10 @@ export default function Home() {
             </a>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            No credit card required · Free for everyone
+            No credit card required · Free for everyone ·{" "}
+            <Link href="/pricing" className="font-semibold text-primary hover:opacity-80">
+              See pricing
+            </Link>
           </p>
         </div>
 
@@ -279,7 +282,11 @@ export default function Home() {
               <Link href="/compare" className="font-semibold text-primary hover:opacity-80">
                 EasyRetro, Retrium, and Miro alternatives
               </Link>
-              .
+              .{" "}
+              <Link href="/pricing" className="font-semibold text-primary hover:opacity-80">
+                Pricing is $0
+              </Link>
+              — there is no paid plan.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

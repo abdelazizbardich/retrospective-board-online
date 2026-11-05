@@ -53,6 +53,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    {
+      url: sitemapLoc(`${SITE_URL}/pricing`),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
     ...getAllComparePages().map((page) => ({
       url: sitemapLoc(`${SITE_URL}/compare/${page.slug}`),
       changeFrequency: "monthly" as const,

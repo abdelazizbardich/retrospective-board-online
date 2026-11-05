@@ -43,6 +43,9 @@ export async function SiteHeader() {
           <Link href="/compare" className="hover:text-foreground transition-colors">
             Compare
           </Link>
+          <Link href="/pricing" className="hover:text-foreground transition-colors">
+            Pricing
+          </Link>
         </div>
 
         <div className="flex items-center gap-3">
@@ -64,15 +67,33 @@ export async function SiteHeader() {
   );
 }
 
+const MARKETING_FOOTER = [
+  { href: "/templates", label: "Templates" },
+  { href: "/compare", label: "Compare" },
+  { href: "/pricing", label: "Pricing" },
+] as const;
+
 export async function SiteFooter() {
   const links = await loadNav("footer");
+  const extras = MARKETING_FOOTER.filter(
+    (item) => !links.some((link) => link.href === item.href)
+  );
 
   return (
     <footer className="border-t border-border py-8">
       <div className="mx-auto max-w-6xl px-6 flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row">
         <p>© {new Date().getFullYear()} SprintsPlans. All rights reserved.</p>
-        {links.length > 0 && (
+        {(links.length > 0 || extras.length > 0) && (
           <div className="flex flex-wrap justify-center gap-6">
+            {extras.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="hover:text-foreground transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
             {links.map((link) => (
               <Link
                 key={link.id}
