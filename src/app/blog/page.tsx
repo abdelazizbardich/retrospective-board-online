@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { redirect } from "next/navigation";
 
-import { getBlogPostsPage } from "@/lib/blog-store";
+import { getCachedBlogPostsPage } from "@/lib/public-content";
 
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 
@@ -80,7 +80,7 @@ export default async function BlogPage({
 
   const requestedPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
-  const { posts, page, totalPages, total } = await getBlogPostsPage(requestedPage);
+  const { posts, page, totalPages, total } = await getCachedBlogPostsPage(requestedPage);
 
 
 

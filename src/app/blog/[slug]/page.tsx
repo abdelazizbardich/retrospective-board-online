@@ -3,7 +3,11 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Calendar, User, ArrowLeft } from "lucide-react";
 import { sanitizeContent } from "@/lib/sanitize-content";
-import { getBlogPost, getRelatedBlogPosts } from "@/lib/blog-store";
+import {
+  getCachedPublishedBlogPost,
+  getCachedPublishedBlogPosts,
+  getCachedRelatedBlogPosts,
+} from "@/lib/public-content";
 import { getPostCoverImage, getPostCoverImageAlt } from "@/lib/blog-thumbnail";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 import { BlogCategoryLink } from "@/app/components/blog-category-link";
@@ -17,12 +21,18 @@ import { buildDocumentTitle, clampMetaDescription, ensureMetaDescription } from 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
 export const revalidate = 3600;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const posts = await getCachedPublishedBlogPosts();
+  return posts.map((post) => ({ slug: post.slug }));
+}
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getBlogPost(slug);
+  const post = await getCachedPublishedBlogPost(slug);
   if (!post?.published) return {};
   const coverImage = getPostCoverImage(post);
   const coverImageAlt = getPostCoverImageAlt(post);
@@ -73,7 +83,7 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }>) {
   const { slug } = await params;
-  const post = await getBlogPost(slug);
+  const post = await getCachedPublishedBlogPost(slug);
 
   if (!post?.published) notFound();
 
@@ -83,7 +93,7 @@ export default async function BlogPostPage({
 
   const coverImage = getPostCoverImage(post);
   const coverImageAlt = getPostCoverImageAlt(post);
-  const relatedPosts = await getRelatedBlogPosts(post);
+  const relatedPosts = await getCachedRelatedBlogPosts(slug);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

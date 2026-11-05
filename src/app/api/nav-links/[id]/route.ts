@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateNavLink, deleteNavLink } from "@/lib/nav-link-store";
+import { revalidateNavCache } from "@/lib/public-cache";
 import { requireAdmin } from "@/app/api/admin/auth/route";
 import { isSafeHref } from "@/lib/safe-url";
 
@@ -33,6 +34,7 @@ export async function PATCH(
   });
 
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  revalidateNavCache();
   return NextResponse.json(updated);
 }
 
@@ -46,5 +48,6 @@ export async function DELETE(
   const { id } = await params;
   const deleted = await deleteNavLink(id);
   if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  revalidateNavCache();
   return NextResponse.json({ ok: true });
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBlogPost, updateBlogPost, deleteBlogPost, resolveBlogPublishState } from "@/lib/blog-store";
+import { revalidateBlogCache } from "@/lib/public-cache";
 import { requireAdmin } from "@/app/api/admin/auth/route";
 import { parseSeoFieldsFromBody } from "@/lib/seo/api-helpers";
 
@@ -88,6 +89,7 @@ export async function PATCH(
         scheduledAt: publishState.scheduledAt,
       }),
     });
+    revalidateBlogCache();
     return NextResponse.json(updated);
   } catch (error: unknown) {
     const err = error as { message?: string; code?: string };
@@ -112,5 +114,6 @@ export async function DELETE(
   const deleted = await deleteBlogPost(slug);
   if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  revalidateBlogCache();
   return NextResponse.json({ ok: true });
 }

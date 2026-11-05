@@ -3,6 +3,8 @@ import Link from "next/link";
 import { SITE_URL } from "@/lib/config";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:

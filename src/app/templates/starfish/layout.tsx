@@ -3,6 +3,8 @@ import { buildDocumentTitle } from "@/lib/seo/meta";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: buildDocumentTitle("Starfish Retrospective"),
   description:

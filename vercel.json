@@ -5,5 +5,22 @@
       "path": "/api/cron/publish-blog",
       "schedule": "0 6 * * *"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.sprintsplans.com" }],
+      "destination": "https://sprintsplans.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "sprintsplans.com" },
+        { "type": "header", "key": "x-forwarded-proto", "value": "http" }
+      ],
+      "destination": "https://sprintsplans.com/:path*",
+      "permanent": true
+    }
   ]
 }

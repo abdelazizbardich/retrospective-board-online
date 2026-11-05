@@ -1,16 +1,24 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { sanitizeContent } from "@/lib/sanitize-content";
-import { getPage } from "@/lib/page-store";
+import { getCachedPublishedPage, getCachedPublishedPages } from "@/lib/public-content";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
+
+export const revalidate = 3600;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const pages = await getCachedPublishedPages();
+  return pages.map((page) => ({ slug: page.slug }));
+}
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   const { slug } = await params;
-  const page = await getPage(slug);
+  const page = await getCachedPublishedPage(slug);
   if (!page?.published) return {};
   return {
     title: page.title,
@@ -31,7 +39,7 @@ export default async function PublicPage({
   params: Promise<{ slug: string }>;
 }>) {
   const { slug } = await params;
-  const page = await getPage(slug);
+  const page = await getCachedPublishedPage(slug);
 
   if (!page?.published) notFound();
 

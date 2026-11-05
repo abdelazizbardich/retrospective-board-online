@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getNavLinks } from "@/lib/nav-link-store";
+import { getCachedNavLinks } from "@/lib/public-content";
 
 export async function SiteHeader() {
-  const links = await getNavLinks("header");
+  const links = await getCachedNavLinks("header");
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
@@ -56,7 +56,7 @@ export async function SiteHeader() {
 }
 
 export async function SiteFooter() {
-  const links = await getNavLinks("footer");
+  const links = await getCachedNavLinks("footer");
 
   return (
     <footer className="border-t border-border py-8">

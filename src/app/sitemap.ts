@@ -1,16 +1,7 @@
 import type { MetadataRoute } from "next";
 
-import { blogSearchHref } from "@/lib/blog-links";
-import { getAllBlogCategories } from "@/lib/blog-category-store";
-import {
-  BLOG_POSTS_PER_PAGE,
-  getAllBlogPosts,
-  getBlogPostsFiltered,
-  getBlogPostsPage,
-  type BlogPost,
-} from "@/lib/blog-store";
 import { SITE_URL } from "@/lib/config";
-import { getAllPages } from "@/lib/page-store";
+import { getCachedPublishedBlogPosts, getCachedPublishedPages } from "@/lib/public-content";
 
 export const revalidate = 3600;
 
@@ -19,43 +10,15 @@ function sitemapLoc(url: string): string {
   return url.replace(/&/g, "&amp;");
 }
 
-function collectUniqueTags(posts: BlogPost[]): string[] {
-  const tags = new Set<string>();
-  for (const post of posts) {
-    for (const tag of post.tags.split(",").map((t) => t.trim()).filter(Boolean)) {
-      tags.add(tag);
-    }
-  }
-  return [...tags].sort((a, b) => a.localeCompare(b));
-}
-
-async function blogFilterRoutes(
-  filters: { category?: string; tag?: string }
-): Promise<MetadataRoute.Sitemap> {
-  const { totalPages } = await getBlogPostsFiltered(filters, 1);
-  if (totalPages === 0) return [];
-
-  const routes: MetadataRoute.Sitemap = [];
-  for (let page = 1; page <= totalPages; page++) {
-    routes.push({
-      url: sitemapLoc(`${SITE_URL}${blogSearchHref(filters, page)}`),
-      changeFrequency: "weekly",
-      priority: page === 1 ? 0.6 : 0.5,
-    });
-  }
-  return routes;
-}
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [posts, cmsPages, categories, blogIndex] = await Promise.all([
-    getAllBlogPosts(false),
-    getAllPages(false),
-    getAllBlogCategories(),
-    getBlogPostsPage(1, BLOG_POSTS_PER_PAGE, false),
+  const [posts, cmsPages] = await Promise.all([
+    getCachedPublishedBlogPosts(),
+    getCachedPublishedPages(),
   ]);
 
-  const tags = collectUniqueTags(posts);
-
+  // High-value URLs only: homepage, marketing, templates, published posts/pages.
+  // Tag search (`/blog/search?tag=`) and pagination (`/blog?page=N`) stay
+  // crawlable via on-page links but are excluded so they do not dilute the map.
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: sitemapLoc(SITE_URL),
@@ -94,15 +57,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  const blogPagination: MetadataRoute.Sitemap = Array.from(
-    { length: Math.max(0, blogIndex.totalPages - 1) },
-    (_, index) => ({
-      url: sitemapLoc(`${SITE_URL}/blog?page=${index + 2}`),
-      changeFrequency: "daily" as const,
-      priority: 0.7,
-    })
-  );
-
   const blogPostRoutes: MetadataRoute.Sitemap = posts.map((post) => ({
     url: sitemapLoc(`${SITE_URL}/blog/${post.slug}`),
     lastModified: new Date(post.updatedAt),
@@ -117,24 +71,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  const categoryRoutes = (
-    await Promise.all(
-      categories.map((category) =>
-        blogFilterRoutes({ category: category.name })
-      )
-    )
-  ).flat();
-
-  const tagRoutes = (
-    await Promise.all(tags.map((tag) => blogFilterRoutes({ tag })))
-  ).flat();
-
-  return [
-    ...staticRoutes,
-    ...blogPagination,
-    ...blogPostRoutes,
-    ...cmsPageRoutes,
-    ...categoryRoutes,
-    ...tagRoutes,
-  ];
+  return [...staticRoutes, ...blogPostRoutes, ...cmsPageRoutes];
 }

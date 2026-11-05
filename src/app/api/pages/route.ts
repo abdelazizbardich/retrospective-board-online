@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllPages, createPage } from "@/lib/page-store";
+import { revalidatePagesCache } from "@/lib/public-cache";
 import { requireAdmin } from "@/app/api/admin/auth/route";
 
 export async function GET(request: NextRequest) {
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
       metaDescription: String(metaDescription ?? "").trim().slice(0, 300),
       published: published === true,
     });
+    revalidatePagesCache();
     return NextResponse.json(page, { status: 201 });
   } catch (error: any) {
     // Handle duplicate slug constraint violation

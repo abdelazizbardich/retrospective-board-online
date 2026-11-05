@@ -4,6 +4,8 @@ import { SITE_URL, SITE_EMAIL } from "@/lib/config";
 import ContactForm from "./ContactForm";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "Contact",
   description:

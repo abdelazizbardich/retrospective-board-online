@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPage, updatePage, deletePage } from "@/lib/page-store";
+import { revalidatePagesCache } from "@/lib/public-cache";
 import { requireAdmin, isAdminAuthenticated } from "@/app/api/admin/auth/route";
 
 export async function GET(
@@ -52,6 +53,7 @@ export async function PATCH(
       ...(body.metaDescription !== undefined && { metaDescription: String(body.metaDescription).trim().slice(0, 300) }),
       ...(body.published !== undefined       && { published:       body.published === true }),
     });
+    revalidatePagesCache();
     return NextResponse.json(updated);
   } catch (error: any) {
     // Handle duplicate slug constraint violation
@@ -72,5 +74,6 @@ export async function DELETE(
   const { slug } = await params;
   const existed = await deletePage(slug);
   if (!existed) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  revalidatePagesCache();
   return NextResponse.json({ ok: true });
 }
