@@ -54,15 +54,59 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      {
+        source: "/blog/search",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, follow" }],
+      },
+      {
+        source: "/blog",
+        headers: [
+          {
+            key: "CDN-Cache-Control",
+            value: "public, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/blog/:path*",
+        headers: [
+          {
+            key: "CDN-Cache-Control",
+            value: "public, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
     ];
   },
 
   async redirects() {
-    return Object.entries(LEGACY_BLOG_SLUG_REDIRECTS).map(([fromSlug, toSlug]) => ({
-      source: `/blog/${fromSlug}`,
-      destination: `/blog/${toSlug}`,
-      permanent: true,
-    }));
+    const canonicalHostRedirects = [
+      {
+        source: "/:path*",
+        has: [{ type: "host" as const, value: "www.sprintsplans.com" }],
+        destination: "https://sprintsplans.com/:path*",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [
+          { type: "host" as const, value: "sprintsplans.com" },
+          { type: "header" as const, key: "x-forwarded-proto", value: "http" },
+        ],
+        destination: "https://sprintsplans.com/:path*",
+        permanent: true,
+      },
+    ];
+
+    const legacyBlogRedirects = Object.entries(LEGACY_BLOG_SLUG_REDIRECTS).map(
+      ([fromSlug, toSlug]) => ({
+        source: `/blog/${fromSlug}`,
+        destination: `/blog/${toSlug}`,
+        permanent: true,
+      })
+    );
+
+    return [...canonicalHostRedirects, ...legacyBlogRedirects];
   },
 };
 

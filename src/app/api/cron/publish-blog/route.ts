@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { publishDueBlogPosts } from "@/lib/blog-store";
+import { revalidateBlogCache } from "@/lib/public-cache";
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET?.trim();
@@ -12,5 +13,6 @@ export async function GET(request: NextRequest) {
   }
 
   const published = await publishDueBlogPosts();
+  if (published > 0) revalidateBlogCache();
   return NextResponse.json({ ok: true, published });
 }

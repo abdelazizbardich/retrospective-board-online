@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllBlogPosts, createBlogPost, deleteBlogPosts, updateBlogPostsPublished, resolveBlogPublishState } from "@/lib/blog-store";
+import { revalidateBlogCache } from "@/lib/public-cache";
 import { requireAdmin } from "@/app/api/admin/auth/route";
 import { parseSeoFieldsFromBody } from "@/lib/seo/api-helpers";
 import { emptySeoFields } from "@/lib/seo/types";
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
       published: publishState.published,
       scheduledAt: publishState.scheduledAt,
     });
+    revalidateBlogCache();
     return NextResponse.json(post, { status: 201 });
   } catch (error: unknown) {
     const err = error as { message?: string; code?: string };
@@ -111,6 +113,7 @@ export async function PATCH(request: NextRequest) {
 
   const updated = await updateBlogPostsPublished(slugs, body.published);
   const notFound = slugs.length - updated;
+  if (updated > 0) revalidateBlogCache();
 
   return NextResponse.json({
     updated,
@@ -137,6 +140,7 @@ export async function DELETE(request: NextRequest) {
 
   const deleted = await deleteBlogPosts(slugs);
   const notFound = slugs.length - deleted;
+  if (deleted > 0) revalidateBlogCache();
 
   return NextResponse.json({
     deleted,

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Folder, Tag } from "lucide-react";
-import { getBlogPostsFiltered } from "@/lib/blog-store";
+import { getCachedBlogPostsFiltered } from "@/lib/public-content";
 import { blogSearchHref } from "@/lib/blog-links";
 import { SiteHeader, SiteFooter } from "@/app/components/site-nav";
 import { BlogPostCard } from "@/app/components/blog-post-card";
@@ -79,12 +79,10 @@ export async function generateMetadata({
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const label = getFilterLabel(category, tag, q);
   const pageSuffix = page > 1 ? ` — Page ${page}` : "";
-  const { total } = await getBlogPostsFiltered(
-    {
-      category: category?.trim() || undefined,
-      tag: tag?.trim() || undefined,
-      q: q?.trim() || undefined,
-    },
+  const { total } = await getCachedBlogPostsFiltered(
+    category?.trim() || "",
+    tag?.trim() || "",
+    q?.trim() || "",
     page
   );
   const description = getFilterDescription(category, tag, q, page, total);
@@ -93,6 +91,11 @@ export async function generateMetadata({
   return {
     title,
     description,
+    robots: {
+      index: false,
+      follow: true,
+      googleBot: { index: false, follow: true },
+    },
     alternates: {
       canonical: `${SITE_URL}${blogSearchHref({ category, tag, q }, page)}`,
     },
@@ -123,8 +126,10 @@ export default async function BlogSearchPage({
     q: q?.trim() || undefined,
   };
 
-  const { posts, page, totalPages, total } = await getBlogPostsFiltered(
-    filters,
+  const { posts, page, totalPages, total } = await getCachedBlogPostsFiltered(
+    filters.category ?? "",
+    filters.tag ?? "",
+    filters.q ?? "",
     requestedPage
   );
 

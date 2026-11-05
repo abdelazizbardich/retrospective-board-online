@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getNavLinks, createNavLink } from "@/lib/nav-link-store";
+import { revalidateNavCache } from "@/lib/public-cache";
 import { requireAdmin } from "@/app/api/admin/auth/route";
 import type { NavLinkArea } from "@/lib/nav-link-store";
 import { isSafeHref } from "@/lib/safe-url";
@@ -39,5 +40,6 @@ export async function POST(request: NextRequest) {
     openInNewTab: openInNewTab === true,
   });
 
+  revalidateNavCache();
   return NextResponse.json(link, { status: 201 });
 }

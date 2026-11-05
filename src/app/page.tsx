@@ -26,6 +26,8 @@ function templateHref(id: string) {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sprintsplans.com";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: buildDocumentTitle("Free Online Retrospective Board"),
   description:

@@ -4,6 +4,7 @@ import { createBlogCategory, getAllBlogCategories } from "@/lib/blog-category-st
 import { applyImportPostLinks } from "@/lib/import-blog";
 import { resolveCoverImage } from "@/lib/blog-thumbnail";
 import { requireAdmin } from "@/app/api/admin/auth/route";
+import { revalidateBlogCache } from "@/lib/public-cache";
 import { emptySeoFields } from "@/lib/seo/types";
 
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -118,6 +119,8 @@ export async function POST(request: NextRequest) {
       }
     }
   }
+
+  if (created.length > 0) revalidateBlogCache();
 
   return NextResponse.json({
     created: created.length,
