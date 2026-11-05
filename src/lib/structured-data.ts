@@ -136,3 +136,16 @@ export function breadcrumbListSchema(items: { name: string; path: string }[]) {
     })),
   };
 }
+
+export function itemListSchema(items: { name: string; path: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: `${SITE_URL}${item.path}`,
+    })),
+  };
+}

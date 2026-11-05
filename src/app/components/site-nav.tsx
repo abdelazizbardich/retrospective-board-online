@@ -27,22 +27,23 @@ export async function SiteHeader() {
           />
         </Link>
 
-        {links.length > 0 && (
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            {links.map((link) => (
-              <Link
-                key={link.id}
-                href={link.href}
-                className="hover:text-foreground transition-colors"
-                {...(link.openInNewTab
-                  ? { target: "_blank", rel: "noopener noreferrer" }
-                  : {})}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        )}
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
+          {links.map((link) => (
+            <Link
+              key={link.id}
+              href={link.href}
+              className="hover:text-foreground transition-colors"
+              {...(link.openInNewTab
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <Link href="/compare" className="hover:text-foreground transition-colors">
+            Compare
+          </Link>
+        </div>
 
         <div className="flex items-center gap-3">
           <Link

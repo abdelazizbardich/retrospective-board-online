@@ -275,6 +275,10 @@ export default function Home() {
               <Link href="/templates" className="font-semibold text-primary hover:opacity-80">
                 Browse all templates
               </Link>
+              . Comparing tools? See{" "}
+              <Link href="/compare" className="font-semibold text-primary hover:opacity-80">
+                EasyRetro, Retrium, and Miro alternatives
+              </Link>
               .
             </p>
           </div>
